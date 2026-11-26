@@ -1,18 +1,98 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { AppLock } from '@/components/app-lock';
+import { ApiError } from '@/lib/api/client';
+import { setupApi } from '@/lib/api/setup';
+import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
+import { PreferencesProvider } from '@/lib/preferences';
+import { getColors } from '@/theme';
 
+setupApi();
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 30_000,
+        // Não insiste em erros de autenticação/validação, só em falhas de rede/servidor.
+        retry: (count, error) => error instanceof ApiError && (error.isNetwork || error.status >= 500) && count < 2,
+      },
+    },
+  });
+}
+
+export default function RootLayout() {
+  const [queryClient] = useState(makeQueryClient);
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const c = getColors(scheme);
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...base,
+    colors: { ...base.colors, primary: c.primary, background: c.background, card: c.surface, text: c.text, border: c.border },
+  };
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <PreferencesProvider>
+          <AuthProvider>
+            <ThemeProvider value={navTheme}>
+              <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+              <AppLock>
+                <RootNavigator />
+              </AppLock>
+            </ThemeProvider>
+          </AuthProvider>
+        </PreferencesProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
+  );
+}
+
+function RootNavigator() {
+  const { status, user } = useAuth();
+
+  useEffect(() => {
+    if (status !== 'loading') void SplashScreen.hideAsync();
+  }, [status]);
+
+  if (status === 'loading') return null;
+
+  const signedIn = status === 'signedIn';
+  const ready = signedIn && !!user?.onboardingCompleted;
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!signedIn}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={signedIn && !ready}>
+        <Stack.Screen name="onboarding" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={ready}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="transacao"
+          options={{ presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.92], headerShown: false }}
+        />
+        <Stack.Screen
+          name="meta"
+          options={{ presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.75, 0.92], headerShown: false }}
+        />
+        <Stack.Screen
+          name="aporte"
+          options={{ presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.5], headerShown: false }}
+        />
+      </Stack.Protected>
+    </Stack>
   );
 }
