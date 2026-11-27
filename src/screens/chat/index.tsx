@@ -11,7 +11,8 @@ import { Text } from '@/components/text';
 import { qk, useChatStats } from '@/hooks/queries';
 import { ApiError } from '@/lib/api/client';
 import { chatApi } from '@/lib/api/endpoints';
-import type { ChatHistoryItem, ProposedAction } from '@/lib/api/types';
+import type { ChatHistoryItem, ProposedAction, ProposedActionStatus } from '@/lib/api/types';
+import { clearActionStates, loadActionStates, saveActionState } from '@/lib/chat-action-store';
 import { maxContentWidth, radius, spacing, typography, useColors } from '@/theme';
 
 import { ActionCard, type ActionState } from './action-card';
@@ -45,12 +46,24 @@ export function Chat() {
     // Mensagens novas ficam em `local`; recarregar o histórico duplicaria.
     staleTime: Infinity,
     refetchOnWindowFocus: false,
+    // Ao voltar para a tela, as mensagens locais somem: busca de novo no servidor.
+    refetchOnMount: 'always',
   });
 
   const [local, setLocal] = useState<Message[]>([]); // mais novas primeiro
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [actionStates, setActionStates] = useState<Record<string, ActionState>>({});
+  // Estado dos cartões: começa com o que ficou salvo no aparelho.
+  const [actionStates, setActionStates] = useState<Record<string, ActionState>>(loadActionStates);
+
+  const changeActionState = useCallback((id: string, s: ActionState) => {
+    setActionStates((cur) => ({ ...cur, [id]: s }));
+    if (s === 'done' || s === 'dismissed') {
+      saveActionState(id, s);
+      // Avisa a API (se ela ainda não tiver a rota, ignora).
+      void chatApi.setActionStatus(id, s === 'done' ? 'CONFIRMED' : 'DISCARDED').catch(() => undefined);
+    }
+  }, []);
 
   const messages: Message[] = useMemo(() => {
     const fromServer = (history.data ?? []).map((h: ChatHistoryItem) => ({
@@ -93,6 +106,7 @@ export function Chat() {
       await chatApi.clearHistory().catch(() => undefined);
       setLocal([]);
       setActionStates({});
+      clearActionStates();
       await queryClient.invalidateQueries({ queryKey: qk.chatHistory });
     };
     if (Platform.OS === 'web') {
@@ -173,12 +187,15 @@ export function Chat() {
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.list}
+          // Lista invertida: o ajuste automático do iOS iria para o lado errado.
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustsScrollIndicatorInsets={false}
           ListHeaderComponent={sending ? <TypingBubble /> : undefined}
           renderItem={({ item }) => (
             <MessageRow
               message={item}
               actionStates={actionStates}
-              onActionState={(id, s) => setActionStates((cur) => ({ ...cur, [id]: s }))}
+              onActionState={changeActionState}
             />
           )}
         />
@@ -277,11 +294,16 @@ function MessageRow({
           </Text>
         ) : null}
         {message.actions?.map((a) => (
-          <ActionCard key={a.id} action={a} state={actionStates[a.id] ?? 'pending'} onStateChange={(s) => onActionState(a.id, s)} />
+          <ActionCard key={a.id} action={a} state={actionStates[a.id] ?? serverState(a.status)} onStateChange={(s) => onActionState(a.id, s)} />
         ))}
       </View>
     </View>
   );
+}
+
+/** Status que a API guardou para o cartão (quando ela já manda). */
+function serverState(status?: ProposedActionStatus): ActionState {
+  return status === 'CONFIRMED' ? 'done' : status === 'DISCARDED' ? 'dismissed' : 'pending';
 }
 
 function TypingBubble() {
@@ -307,7 +329,8 @@ const styles = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.xl, maxWidth: maxContentWidth, alignSelf: 'center' },
   suggestions: { gap: spacing.sm, alignSelf: 'stretch', marginTop: spacing.md },
   suggestion: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth },
-  list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, gap: spacing.md, width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
+  // Invertida: paddingTop é o espaço visual acima do campo de texto.
+  list: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md, width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
   messageRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-end' },
   mine: { justifyContent: 'flex-end', paddingLeft: spacing.xxxl },
   theirs: { justifyContent: 'flex-start', paddingRight: spacing.xxl },

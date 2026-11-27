@@ -22,6 +22,11 @@ import type {
 
 const V1 = '/api/v1';
 
+/** A API usa a chave para não criar o mesmo registro duas vezes. */
+function idem(key?: string): Record<string, string> | undefined {
+  return key && /^[\w-]{1,64}$/.test(key) ? { 'Idempotency-Key': key } : undefined;
+}
+
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<AuthResponse>(`${V1}/auth/login`, { email, password }, { auth: false }),
@@ -40,7 +45,8 @@ export const transactionsApi = {
   byCategory: (startDate: string, endDate: string) =>
     api.get<CategorySummary>(`${V1}/transactions/by-category`, { query: { startDate, endDate } }),
   get: (id: string) => api.get<Transaction>(`${V1}/transactions/${encodeURIComponent(id)}`),
-  create: (input: TransactionInput) => api.post<Transaction>(`${V1}/transactions`, input),
+  create: (input: TransactionInput, idempotencyKey?: string) =>
+    api.post<Transaction>(`${V1}/transactions`, input, { headers: idem(idempotencyKey) }),
   update: (id: string, input: TransactionInput) => api.put<Transaction>(`${V1}/transactions/${encodeURIComponent(id)}`, input),
   remove: (id: string) => api.delete<void>(`${V1}/transactions/${encodeURIComponent(id)}`),
 };
@@ -52,11 +58,11 @@ export const categoriesApi = {
 export const goalsApi = {
   list: () => api.get<Goal[]>(`${V1}/goals`),
   get: (id: string) => api.get<Goal>(`${V1}/goals/${encodeURIComponent(id)}`),
-  create: (input: GoalInput) => api.post<Goal>(`${V1}/goals`, input),
+  create: (input: GoalInput, idempotencyKey?: string) => api.post<Goal>(`${V1}/goals`, input, { headers: idem(idempotencyKey) }),
   update: (id: string, input: GoalInput) => api.put<Goal>(`${V1}/goals/${encodeURIComponent(id)}`, input),
   remove: (id: string) => api.delete<void>(`${V1}/goals/${encodeURIComponent(id)}`),
-  contribute: (id: string, amount: number) =>
-    api.post<GoalProgress>(`${V1}/goals/${encodeURIComponent(id)}/contribute`, { amount }),
+  contribute: (id: string, amount: number, idempotencyKey?: string) =>
+    api.post<GoalProgress>(`${V1}/goals/${encodeURIComponent(id)}/contribute`, { amount }, { headers: idem(idempotencyKey) }),
 };
 
 export const chatApi = {
@@ -66,6 +72,9 @@ export const chatApi = {
     api.get<Page<ChatHistoryItem>>(`${V1}/chat/history`, { query: { page, size, sort: 'createdAt,desc' } }),
   clearHistory: () => api.delete<void>(`${V1}/chat/history`),
   stats: () => api.get<ChatStats>(`${V1}/chat/stats`),
+  /** Marca o cartão como salvo/descartado no servidor (idempotente). */
+  setActionStatus: (actionId: string, status: 'CONFIRMED' | 'DISCARDED') =>
+    api.put<void>(`${V1}/chat/actions/${encodeURIComponent(actionId)}`, { status }),
 };
 
 export const profileApi = {

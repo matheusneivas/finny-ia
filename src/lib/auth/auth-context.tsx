@@ -7,6 +7,7 @@ import { setSessionExpiredHandler } from '@/lib/api/client';
 import { authApi, onboardingApi, profileApi } from '@/lib/api/endpoints';
 import type { AuthResponse, User } from '@/lib/api/types';
 
+import { clearActionStates } from '@/lib/chat-action-store';
 import { clearFiniWidget } from '@/lib/widget-sync';
 
 import { tokenStorage } from './token-storage';
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await saveUser(null);
     queryClient.clear(); // nada do usuário anterior fica em cache
     clearFiniWidget(); // widget deixa de mostrar valores
+    clearActionStates();
     setUser(null);
     setStatus('signedOut');
   }, [queryClient]);

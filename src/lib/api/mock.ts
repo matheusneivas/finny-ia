@@ -56,6 +56,7 @@ let goals: Goal[] = [
   },
 ];
 const history: ChatHistoryItem[] = [];
+const idemTx = new Map<string, string>();
 
 const json = (status: number, body?: unknown) =>
   new Response(body === undefined ? null : JSON.stringify(body), {
@@ -291,8 +292,12 @@ export const mockTransport: Transport = async (path, init) => {
     return json(200, { content: list, totalElements: list.length, totalPages: 1, number: 0, size: list.length, last: true });
   }
   if (p === '/transactions' && method === 'POST') {
+    // Idempotency-Key: a mesma chave devolve o lançamento já criado.
+    const key = (init.headers as Record<string, string> | undefined)?.['Idempotency-Key'];
+    if (key && idemTx.has(key)) return json(201, transactions.find((t) => t.id === idemTx.get(key)));
     const t: Transaction = { id: uid(), ...body, category: cat(body.categoryId), source: 'MANUAL' };
     transactions = [t, ...transactions];
+    if (key) idemTx.set(key, t.id);
     return json(201, t);
   }
   if (p === '/transactions/summary') {
@@ -356,6 +361,11 @@ export const mockTransport: Transport = async (path, init) => {
     return json(200, { ...ai, tokensUsed: 0 });
   }
   if (p === '/chat/history' && method === 'GET') return json(200, { content: history, totalElements: history.length, totalPages: 1, number: 0, size: 50, last: true });
+  const actionMatch = p.match(/^\/chat\/actions\/([^/]+)$/);
+  if (actionMatch && method === 'PUT') {
+    for (const h of history) for (const a of h.proposedActions ?? []) if (a.id === actionMatch[1]) a.status = body.status;
+    return json(204);
+  }
   if (p === '/chat/history' && method === 'DELETE') { history.length = 0; return json(200, {}); }
   if (p === '/chat/stats') { const used = history.filter((h) => h.role === 'USER').length; return json(200, { plan: 'FREE', messagesUsedThisMonth: used, monthlyLimit: 50, remainingThisMonth: 50 - used }); }
 

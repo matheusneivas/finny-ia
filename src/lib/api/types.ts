@@ -140,12 +140,16 @@ export interface GoalProgress {
  * mostra um cartão e, ao confirmar, chama os endpoints normais.
  * Contrato combinado com a thread da API (campo novo `proposedActions`).
  */
-export type ProposedAction =
+/** Status guardado pela API (campo novo; pode não vir em versões antigas). */
+export type ProposedActionStatus = 'PENDING' | 'CONFIRMED' | 'DISCARDED';
+
+export type ProposedAction = { status?: ProposedActionStatus } & (
   | { id: string; type: 'CREATE_TRANSACTION'; summary?: string; payload: TransactionInput }
   | { id: string; type: 'CREATE_GOAL'; summary?: string; payload: GoalInput }
   | { id: string; type: 'CONTRIBUTE_GOAL'; summary?: string; payload: { goalId: string; amount: number } }
   | { id: string; type: 'UPDATE_TRANSACTION'; summary?: string; payload: TransactionInput & { transactionId: string } }
-  | { id: string; type: 'DELETE_TRANSACTION'; summary?: string; payload: { transactionId: string } };
+  | { id: string; type: 'DELETE_TRANSACTION'; summary?: string; payload: { transactionId: string } }
+);
 
 export interface ChatResponse {
   reply: string;

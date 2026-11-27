@@ -32,6 +32,8 @@ export interface RequestOptions {
   auth?: boolean;
   timeoutMs?: number;
   signal?: AbortSignal;
+  /** Ex.: Idempotency-Key. Nunca substitui Authorization. */
+  headers?: Record<string, string>;
 }
 
 /** Chamado quando a sessão expira de vez (refresh falhou). O AuthProvider registra. */
@@ -131,7 +133,8 @@ async function rawRequestInner(path: string, opts: RequestOptions, accessToken: 
   const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? env.requestTimeoutMs);
   opts.signal?.addEventListener('abort', () => controller.abort());
 
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = { ...opts.headers, Accept: 'application/json' };
+  delete headers.Authorization;
   const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData;
   // FormData: o fetch define o Content-Type com o boundary do multipart.
   if (opts.body !== undefined && !isForm) headers['Content-Type'] = 'application/json';

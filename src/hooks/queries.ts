@@ -55,7 +55,11 @@ function useInvalidateMoney() {
 
 export function useCreateTransaction() {
   const invalidate = useInvalidateMoney();
-  return useMutation({ mutationFn: (input: TransactionInput) => transactionsApi.create(input), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: ({ idempotencyKey, ...input }: TransactionInput & { idempotencyKey?: string }) =>
+      transactionsApi.create(input, idempotencyKey),
+    onSuccess: invalidate,
+  });
 }
 
 export function useUpdateTransaction() {
@@ -74,7 +78,7 @@ export function useDeleteTransaction() {
 export function useCreateGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: GoalInput) => goalsApi.create(input),
+    mutationFn: ({ idempotencyKey, ...input }: GoalInput & { idempotencyKey?: string }) => goalsApi.create(input, idempotencyKey),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.goals }),
   });
 }
@@ -90,7 +94,8 @@ export function useDeleteGoal() {
 export function useContributeGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ goalId, amount }: { goalId: string; amount: number }) => goalsApi.contribute(goalId, amount),
+    mutationFn: ({ goalId, amount, idempotencyKey }: { goalId: string; amount: number; idempotencyKey?: string }) =>
+      goalsApi.contribute(goalId, amount, idempotencyKey),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.goals }),
   });
 }

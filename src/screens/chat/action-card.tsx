@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -70,13 +70,18 @@ export function ActionCard({
 
   const categoryName = (id?: string) => categories.data?.find((c) => c.id === id)?.name ?? '—';
 
+  // Evita salvar duas vezes com toques rápidos (antes do estado atualizar).
+  const busy = useRef(false);
+
   async function confirm() {
+    if (busy.current || state !== 'pending') return;
+    busy.current = true;
     setError(null);
     onStateChange('saving');
     try {
       switch (action.type) {
         case 'CREATE_TRANSACTION':
-          await createTx.mutateAsync(action.payload);
+          await createTx.mutateAsync({ ...action.payload, idempotencyKey: action.id });
           break;
         case 'UPDATE_TRANSACTION': {
           const { transactionId, ...input } = action.payload;
@@ -87,10 +92,10 @@ export function ActionCard({
           await deleteTx.mutateAsync(action.payload.transactionId);
           break;
         case 'CREATE_GOAL':
-          await createGoal.mutateAsync(action.payload);
+          await createGoal.mutateAsync({ ...action.payload, idempotencyKey: action.id });
           break;
         case 'CONTRIBUTE_GOAL':
-          await contribute.mutateAsync(action.payload);
+          await contribute.mutateAsync({ ...action.payload, idempotencyKey: action.id });
           break;
       }
       if (Platform.OS !== 'web') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -98,6 +103,8 @@ export function ActionCard({
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Não foi possível salvar.');
       onStateChange('pending');
+    } finally {
+      busy.current = false;
     }
   }
 
