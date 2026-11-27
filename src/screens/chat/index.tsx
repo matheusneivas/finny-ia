@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FiniAvatar, FiniMark } from '@/components/brand';
+import { env } from '@/config/env';
 import { IconButton } from '@/components/button';
 import { Text } from '@/components/text';
 import { qk, useChatStats } from '@/hooks/queries';
@@ -34,6 +35,7 @@ interface Message {
 export function Chat() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
   const queryClient = useQueryClient();
   const stats = useChatStats();
   const history = useQuery({
@@ -118,7 +120,16 @@ export function Chat() {
         <View style={styles.headerInner}>
           <FiniAvatar size={36} />
           <View style={styles.flex}>
-            <Text variant="heading">Fini</Text>
+            <View style={styles.titleRow}>
+              <Text variant="heading">Fini</Text>
+              {env.useMockApi ? (
+                <View style={[styles.demoBadge, { backgroundColor: colors.warningSoft }]}>
+                  <Text variant="caption" color="warning">
+                    Demonstração
+                  </Text>
+                </View>
+              ) : null}
+            </View>
             <Text variant="caption" color="textSecondary">
               {sending ? 'digitando…' : remaining != null ? `${remaining} mensagens restantes este mês` : 'Seu assistente financeiro'}
             </Text>
@@ -136,6 +147,11 @@ export function Chat() {
           <Text variant="body" color="textSecondary" align="center">
             Me conte um gasto, uma entrada ou um sonho. Eu organizo e você só confirma.
           </Text>
+          {env.useMockApi ? (
+            <Text variant="caption" color="warning" align="center">
+              Modo demonstração: respostas simuladas no próprio app, sem a IA de verdade e sem salvar no servidor.
+            </Text>
+          ) : null}
           <View style={styles.suggestions}>
             {suggestions.map((s) => (
               <Pressable
@@ -167,7 +183,12 @@ export function Chat() {
         />
       )}
 
-      <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, spacing.md) + (Platform.OS === 'web' ? 88 : 56) }]}>
+      <View
+        style={[
+          styles.composerWrap,
+          // Com o teclado aberto, o campo encosta no teclado; fechado, fica acima da barra de abas.
+          { paddingBottom: keyboardOpen ? spacing.sm : Math.max(insets.bottom, spacing.md) + (Platform.OS === 'web' ? 88 : 56) },
+        ]}>
         <View style={[styles.composer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TextInput
             value={input}
@@ -195,6 +216,20 @@ export function Chat() {
       </View>
     </KeyboardAvoidingView>
   );
+}
+
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setOpen(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return open;
 }
 
 function MessageRow({
@@ -253,6 +288,8 @@ function TypingBubble() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  demoBadge: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, borderRadius: radius.full },
   header: { borderBottomWidth: StyleSheet.hairlineWidth, paddingBottom: spacing.md, paddingHorizontal: spacing.lg },
   headerInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.xl, maxWidth: maxContentWidth, alignSelf: 'center' },

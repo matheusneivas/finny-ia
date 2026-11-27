@@ -56,6 +56,12 @@ export default function RootLayout() {
   );
 }
 
+/**
+ * Formulários abrem como "page sheet" (modal do iOS com gesto de arrastar para fechar).
+ * O formSheet com detents posicionava o conteúdo por cima do título no iPhone.
+ */
+const sheetOptions = { presentation: 'modal', headerShown: false } as const;
+
 function RootNavigator() {
   const { status, user } = useAuth();
 
@@ -82,15 +88,15 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="transacao"
-          options={{ presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.92], headerShown: false }}
+          options={sheetOptions}
         />
         <Stack.Screen
           name="meta"
-          options={{ presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.75, 0.92], headerShown: false }}
+          options={sheetOptions}
         />
         <Stack.Screen
           name="aporte"
-          options={{ presentation: 'formSheet', sheetGrabberVisible: true, sheetAllowedDetents: [0.5], headerShown: false }}
+          options={sheetOptions}
         />
       </Stack.Protected>
     </Stack>

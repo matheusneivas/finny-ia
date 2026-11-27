@@ -3,7 +3,7 @@
  * desenvolvimento, para ver o app no Expo Go sem subir o backend.
  * Não é carregada em builds de produção (ver src/lib/api/setup.ts).
  */
-import { monthRange, currentMonth, today, toIsoDate } from '@/utils/dates';
+import { currentMonth, monthRange, toIsoDate, today, yesterday } from '@/utils/dates';
 
 import type { Transport } from './client';
 import type {
@@ -74,48 +74,159 @@ function inRange(t: Transaction, start?: string | null, end?: string | null) {
   return (!start || t.transactionDate >= start) && (!end || t.transactionDate <= end);
 }
 
-/** IA de mentirinha: entende frases simples para demonstrar o cartão de confirmação. */
+const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const has = (t: string, re: RegExp) => re.test(t);
+
+function monthStats() {
+  const { startDate, endDate } = monthRange(currentMonth());
+  const month = transactions.filter((t) => inRange(t, startDate, endDate));
+  const expenses = month.filter((t) => t.type === 'EXPENSE');
+  const income = month.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const spent = expenses.reduce((s, t) => s + t.amount, 0);
+  const byCat = new Map<string, number>();
+  for (const t of expenses) byCat.set(t.category.name, (byCat.get(t.category.name) ?? 0) + t.amount);
+  const ranking = [...byCat.entries()].sort((a, b) => b[1] - a[1]);
+  const biggest = [...expenses].sort((a, b) => b.amount - a.amount)[0];
+  return { income, spent, balance: income - spent, ranking, biggest, count: month.length };
+}
+
+/** Lê "R$ 1.234,56", "45", "45,90", "2 mil", "1.5k" como número. */
+function parseAmount(text: string): number {
+  const mil = text.match(/(\d+(?:[.,]\d+)?)\s*(mil|k)\b/);
+  if (mil) return parseFloat(mil[1].replace(',', '.')) * 1000;
+  const m = text.match(/(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?|\d+(?:\.\d{1,2})?)/);
+  if (!m) return 0;
+  const raw = m[1];
+  const value = raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : /\.\d{3}$/.test(raw) ? raw.replace(/\./g, '') : raw;
+  return parseFloat(value) || 0;
+}
+
+const categoryRules: [RegExp, string][] = [
+  [/mercado|supermercado|feira|hortifruti|padaria/, 'c-market'],
+  [/uber|99|gasolina|combust|onibus|metro|estacionamento|pedagio|taxi/, 'c-transport'],
+  [/aluguel|luz|energia|agua|internet|condominio|gas\b|iptu/, 'c-home'],
+  [/farmacia|remedio|medico|consulta|exame|dentista|academia/, 'c-health'],
+  [/cinema|show|jogo|bar|festa|netflix|spotify|streaming|viagem|passeio/, 'c-fun'],
+  [/almoco|jantar|lanche|cafe|restaurante|ifood|pizza|comida|hamburguer/, 'c-food'],
+];
+
+/**
+ * "IA" de demonstração: entende frases comuns de finanças pessoais para o app
+ * poder ser testado sem backend. A IA de verdade (Claude) roda na API.
+ */
 function fakeAi(message: string): { reply: string; proposedActions?: ProposedAction[] } {
-  const text = message.toLowerCase();
-  const amountMatch = text.match(/(\d+(?:[.,]\d{1,2})?)/);
-  const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '.')) : 0;
+  const text = norm(message.trim());
+  const amount = parseAmount(text);
+  const st = monthStats();
 
-  if (/meta|juntar|guardar/.test(text) && amount > 0) {
-    const name = text.match(/(?:para|pra)\s+(?:um|uma|o|a)?\s*([a-zà-ú\s]+?)(?:\s+até|\s+em|$)/)?.[1]?.trim() || 'Nova meta';
-    return {
-      reply: `Boa! Preparei uma meta de ${amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. Confira e confirme abaixo.`,
-      proposedActions: [{
-        id: uid(), type: 'CREATE_GOAL', summary: `Criar meta “${name}”`,
-        payload: { name: name.charAt(0).toUpperCase() + name.slice(1), targetAmount: amount, deadline: `${new Date().getFullYear() + 1}-12-31` },
-      }],
-    };
-  }
-
-  if (amount > 0 && /(gastei|paguei|comprei|recebi|ganhei)/.test(text)) {
-    const income = /(recebi|ganhei)/.test(text);
-    const category = income
-      ? cat(/sal[aá]rio/.test(text) ? 'c-salary' : 'c-extra')
-      : cat(/mercado|supermercado/.test(text) ? 'c-market' : /uber|gasolina|combust|ônibus|onibus/.test(text) ? 'c-transport' : /aluguel|luz|água|agua|internet/.test(text) ? 'c-home' : /farm[aá]cia|m[eé]dico/.test(text) ? 'c-health' : /cinema|show|jogo|bar/.test(text) ? 'c-fun' : 'c-food');
-    const description = message.replace(/^(eu\s+)?(gastei|paguei|comprei|recebi|ganhei)\s*/i, '').replace(/r?\$?\s*\d+([.,]\d{1,2})?\s*(reais)?/i, '').replace(/^\s*(no|na|em|de|com)\s+/i, '').trim();
+  // Registrar entrada ou gasto
+  if (amount > 0 && has(text, /(gastei|paguei|comprei|torrei|recebi|ganhei|entrou|caiu)/)) {
+    const income = has(text, /(recebi|ganhei|entrou|caiu)/);
+    const categoryId = income
+      ? has(text, /salario|pagamento do trabalho/) ? 'c-salary' : 'c-extra'
+      : categoryRules.find(([re]) => re.test(text))?.[1] ?? 'c-food';
+    const category = cat(categoryId);
+    const description = message
+      .replace(/^(eu\s+)?(gastei|paguei|comprei|torrei|recebi|ganhei|entrou|caiu)\s*/i, '')
+      .replace(/r?\$?\s*\d[\d.,]*\s*(reais|mil|k)?/i, '')
+      .replace(/^\s*(no|na|em|de|com|do|da|um|uma)\s+/i, '')
+      .trim();
     const payload: TransactionInput = {
       amount, type: income ? 'INCOME' : 'EXPENSE', categoryId: category.id,
       description: description ? description.charAt(0).toUpperCase() + description.slice(1, 60) : category.name,
-      transactionDate: today(),
+      transactionDate: has(text, /ontem/) ? yesterday() : today(),
     };
+    const after = income ? st.balance + amount : st.balance - amount;
     return {
-      reply: income ? 'Que ótimo! Vou registrar essa entrada, é só confirmar.' : 'Anotado! Confirme o gasto para eu salvar na sua planilha.',
+      reply: income
+        ? `Boa! Separei uma entrada de ${brl(amount)} em ${category.name}. Com ela, seu saldo do mês vai para ${brl(after)}. Confirma?`
+        : `Anotei ${brl(amount)} em ${category.name}. Depois disso, sobram ${brl(after)} no mês. Confirma para eu salvar?`,
       proposedActions: [{ id: uid(), type: 'CREATE_TRANSACTION', summary: income ? 'Registrar entrada' : 'Registrar gasto', payload }],
     };
   }
 
-  const { startDate, endDate } = monthRange(currentMonth());
-  const month = transactions.filter((t) => inRange(t, startDate, endDate));
-  const out = month.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
-  const inc = month.filter((t) => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  // Criar meta
+  if (amount > 0 && has(text, /(meta|juntar|guardar|economizar|poupar|comprar um|comprar uma)/)) {
+    const raw = text.match(/(?:para|pra)\s+(?:um|uma|o|a|minha|meu)?\s*([a-z\s]+?)(?:\s+(?:ate|em|no|daqui)\b|$)/)?.[1]?.trim();
+    const name = raw ? raw.charAt(0).toUpperCase() + raw.slice(1, 40) : 'Nova meta';
+    const months = Number(text.match(/(\d+)\s*mes/)?.[1]) || 12;
+    const deadline = new Date();
+    deadline.setMonth(deadline.getMonth() + months);
+    const perMonth = amount / months;
+    const share = st.income > 0 ? Math.round((perMonth / st.income) * 100) : null;
+    return {
+      reply:
+        `Montei a meta “${name}” de ${brl(amount)} em ${months} meses: dá ${brl(perMonth)} por mês` +
+        (share != null ? `, cerca de ${share}% da sua renda deste mês.` : '.') +
+        (share != null && share > 30 ? ' É um valor alto; se apertar, posso esticar o prazo.' : ' Cabe bem no seu orçamento.'),
+      proposedActions: [{ id: uid(), type: 'CREATE_GOAL', summary: `Criar meta “${name}”`, payload: { name, targetAmount: amount, deadline: toIsoDate(deadline) } }],
+    };
+  }
+
+  // Investimentos e ações: não recomendamos ativos específicos
+  if (has(text, /(acao|acoes|bolsa|investir|investimento|cripto|bitcoin|tesouro|cdb|renda fixa|fii)/)) {
+    const reserve = goals.find((g) => /reserva/i.test(g.name));
+    return {
+      reply:
+        'Não indico ações ou ativos específicos: isso depende do seu perfil e pede um profissional certificado. ' +
+        'O que posso dizer é a ordem que costuma funcionar: 1) reserva de emergência de 6 meses de gastos em algo com liquidez diária (Tesouro Selic ou CDB 100% do CDI); 2) só depois, investimentos de longo prazo diversificados. ' +
+        (reserve ? `Sua reserva está em ${Math.round(withProgress(reserve).progressPercentage)}%, então eu focaria nela primeiro.` : 'Quer que eu crie uma meta de reserva de emergência?'),
+    };
+  }
+
+  // Maior gasto / categorias
+  if (has(text, /(maior gasto|onde.*gast|categoria|mais gast|para onde)/)) {
+    if (!st.ranking.length) return { reply: 'Ainda não tem gastos neste mês. Me conte o primeiro, tipo “gastei 30 no almoço”.' };
+    const top = st.ranking.slice(0, 3).map(([n, v]) => `${n} (${brl(v)})`).join(', ');
+    return {
+      reply: `Seus maiores gastos do mês por categoria: ${top}.` + (st.biggest ? ` O maior lançamento foi “${st.biggest.description ?? st.biggest.category.name}”, de ${brl(st.biggest.amount)}.` : ''),
+    };
+  }
+
+  // Quanto gastei / saldo / resumo
+  if (has(text, /(quanto|saldo|resumo|gastei|sobrou|sobra|como estou|como to|balanco)/)) {
+    const rate = st.income > 0 ? Math.round((st.balance / st.income) * 100) : 0;
+    return {
+      reply:
+        `Neste mês entraram ${brl(st.income)} e saíram ${brl(st.spent)}, então sobram ${brl(st.balance)}` +
+        (st.income > 0 ? ` (${rate}% da renda).` : '.') +
+        (rate >= 20 ? ' Está ótimo: acima dos 20% que costumam ser recomendados para guardar.' : rate > 0 ? ' Tente chegar a 20% guardados; corte primeiro no que é variável, como lazer e delivery.' : ' Os gastos passaram da renda; vale revisar as maiores categorias.'),
+    };
+  }
+
+  // Metas
+  if (has(text, /(minhas metas|como estao|progresso|meta)/)) {
+    if (!goals.length) return { reply: 'Você ainda não tem metas. Diga algo como “quero juntar 5000 para uma viagem em 10 meses”.' };
+    const lines = goals.map(withProgress).map((g) => `${g.name}: ${brl(g.savedAmount)} de ${brl(g.targetAmount)} (${Math.round(g.progressPercentage)}%)`).join('; ');
+    return { reply: `Suas metas: ${lines}.` };
+  }
+
+  // Dicas de economia
+  if (has(text, /(dica|economizar|gastar menos|cortar|apertado|divida)/)) {
+    const top = st.ranking[0];
+    return {
+      reply:
+        (top ? `Seu maior gasto variável é ${top[0]} (${brl(top[1])}). Reduzir 15% dele já libera ${brl(top[1] * 0.15)} por mês. ` : '') +
+        'Outras ideias rápidas: revise assinaturas que não usa, defina um teto semanal para delivery e transfira o valor da meta no dia em que o salário cair.',
+    };
+  }
+
+  // Saudações e ajuda
+  if (has(text, /^(oi|ola|bom dia|boa tarde|boa noite|e ai|opa|hey)\b/) || has(text, /(ajuda|o que voce faz|como funciona)/)) {
+    return {
+      reply:
+        'Oi! Sou o Fini. Posso registrar gastos e entradas (“gastei 45 no almoço”), criar metas (“quero juntar 5 mil para uma viagem em 10 meses”), ' +
+        'mostrar seu resumo (“quanto sobrou este mês?”) e onde mais você gasta. Tudo que eu sugerir salvar passa por você antes.',
+    };
+  }
+
+  if (has(text, /(obrigad|valeu|show|perfeito|top)/)) return { reply: 'Por nada! Se precisar, é só chamar.' };
+
   return {
     reply:
-      `Este mês você recebeu ${inc.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} e gastou ${out.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}. ` +
-      'Você pode me contar um gasto (ex.: “gastei 45 no almoço”) ou pedir uma meta (ex.: “quero juntar 5000 para uma viagem”).',
+      'Não entendi bem. Neste modo de demonstração eu entendo coisas como: “gastei 50 no mercado”, “recebi 800 de freela”, ' +
+      '“quanto sobrou este mês?”, “onde eu mais gasto?” e “quero juntar 10 mil para um carro em 24 meses”.',
   };
 }
 
