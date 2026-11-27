@@ -242,12 +242,13 @@ export const mockTransport: Transport = async (path, init) => {
   );
   const q = { get: (k: string) => params.get(k) ?? null };
   const method = (init.method ?? 'GET').toUpperCase();
-  const body = init.body ? JSON.parse(String(init.body)) : undefined;
+  const isForm = typeof FormData !== 'undefined' && init.body instanceof FormData;
+  const body = init.body && !isForm ? JSON.parse(String(init.body)) : undefined;
   const p = pathname.replace('/api/v1', '');
   const authed = !!(init.headers as Record<string, string> | undefined)?.Authorization;
 
   const auth = (name: string, email: string) => {
-    user = { id: 'u-1', email, name, onboardingCompleted: user?.onboardingCompleted ?? false, plan: 'FREE' };
+    user = { id: 'u-1', email, name, onboardingCompleted: user?.onboardingCompleted ?? false, avatarUrl: user?.avatarUrl ?? null, plan: 'FREE' };
     return json(200, { accessToken: `mock.${uid()}`, refreshToken: `mock.${uid()}`, tokenType: 'Bearer', user });
   };
 
@@ -266,7 +267,19 @@ export const mockTransport: Transport = async (path, init) => {
     if (step === 5 && user) user = { ...user, onboardingCompleted: true };
     return json(200, { currentStep: step, totalSteps: 5, progressPercentage: step * 20, completed: step === 5 });
   }
-  if (p === '/users/profile') return json(200, { fullName: user?.name, onboardingCompleted: user?.onboardingCompleted, communicationStyle: 'FRIENDLY', knowledgeLevel: 'BEGINNER' });
+  if (p === '/users/profile') return json(200, { fullName: user?.name, avatarUrl: user?.avatarUrl ?? null, onboardingCompleted: user?.onboardingCompleted, communicationStyle: 'FRIENDLY', knowledgeLevel: 'BEGINNER' });
+
+  if (p === '/users/me/avatar' && method === 'PUT') {
+    // Demonstração: guarda o arquivo local escolhido (não sobe para lugar nenhum).
+    const file = (init.body as unknown as { _parts?: [string, { uri?: string }][] })?._parts?.[0]?.[1];
+    const avatarUrl = typeof file?.uri === 'string' ? file.uri : null;
+    if (user) user = { ...user, avatarUrl };
+    return json(200, { avatarUrl });
+  }
+  if (p === '/users/me/avatar' && method === 'DELETE') {
+    if (user) user = { ...user, avatarUrl: null };
+    return json(200, {});
+  }
 
   if (p === '/categories') {
     const type = q.get('type');

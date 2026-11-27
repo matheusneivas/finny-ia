@@ -73,6 +73,11 @@ export const profileApi = {
   update: (input: Partial<Profile>) => api.put<Profile>(`${V1}/users/profile`, input),
 };
 
+export const avatarApi = {
+  upload: (form: FormData) => api.put<{ avatarUrl: string }>(`${V1}/users/me/avatar`, form, { timeoutMs: 120_000 }),
+  remove: () => api.delete<void>(`${V1}/users/me/avatar`),
+};
+
 export const onboardingApi = {
   status: () => api.get<OnboardingStepResponse>(`${V1}/onboarding/status`),
   step: (n: 1 | 2 | 3 | 4 | 5, body: Record<string, unknown>) =>

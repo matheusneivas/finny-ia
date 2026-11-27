@@ -41,6 +41,7 @@ interface AuthContextValue {
   signUp: (fullName: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   markOnboardingDone: () => void;
+  setAvatarUrl: (url: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -140,9 +141,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setAvatarUrl = useCallback((avatarUrl: string | null) => {
+    setUser((u) => {
+      if (!u) return u;
+      const next = { ...u, avatarUrl };
+      void saveUser(next);
+      return next;
+    });
+  }, []);
+
   const value = useMemo(
-    () => ({ status, user, signIn, signUp, signOut, markOnboardingDone }),
-    [status, user, signIn, signUp, signOut, markOnboardingDone],
+    () => ({ status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl }),
+    [status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

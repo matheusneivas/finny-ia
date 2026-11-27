@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FiniAvatar, FiniMark } from '@/components/brand';
 import { env } from '@/config/env';
 import { IconButton } from '@/components/button';
+import { RichText } from '@/components/rich-text';
 import { Text } from '@/components/text';
 import { qk, useChatStats } from '@/hooks/queries';
 import { ApiError } from '@/lib/api/client';
@@ -186,8 +187,15 @@ export function Chat() {
       <View
         style={[
           styles.composerWrap,
-          // Com o teclado aberto, o campo encosta no teclado; fechado, fica acima da barra de abas.
-          { paddingBottom: keyboardOpen ? spacing.sm : Math.max(insets.bottom, spacing.md) + (Platform.OS === 'web' ? 88 : 56) },
+          // Com o teclado aberto, o campo encosta no teclado; fechado, fica logo acima da barra de abas.
+          {
+            paddingBottom: keyboardOpen
+              ? spacing.sm
+              : Platform.OS === 'web'
+                ? 96 // barra de abas flutuante da web
+                : // No nativo, a área segura já inclui a barra de abas (NativeTabs).
+                  Math.max(insets.bottom, spacing.md) + spacing.sm,
+          },
         ]}>
         <View style={[styles.composer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TextInput
@@ -254,10 +262,14 @@ function MessageRow({
               ? { backgroundColor: colors.primary, borderBottomRightRadius: radius.sm / 2 }
               : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth, borderBottomLeftRadius: radius.sm / 2 },
           ]}>
-          {/* Texto puro: a resposta da IA nunca é interpretada como HTML/markdown. */}
-          <Text variant="body" selectable style={{ color: mine ? colors.onPrimary : colors.text }}>
-            {message.content}
-          </Text>
+          {/* Mensagem do usuário: texto puro. Resposta da IA: markdown mínimo e seguro (sem HTML nem links). */}
+          {mine ? (
+            <Text variant="body" selectable style={{ color: colors.onPrimary }}>
+              {message.content}
+            </Text>
+          ) : (
+            <RichText color={colors.text}>{message.content}</RichText>
+          )}
         </View>
         {message.failed ? (
           <Text variant="caption" color="danger">

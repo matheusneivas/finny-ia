@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Text } from '@/components/text';
 import { TextField, type TextFieldHandle } from '@/components/text-field';
 import { ApiError } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { chooseAvatarSource, pickAvatar, uploadAvatar } from '@/lib/avatar';
 import { radius, spacing, useColors } from '@/theme';
 import { fieldErrors, passwordStrength, signUpSchema } from '@/utils/validation';
 
@@ -16,7 +18,8 @@ const strengthLabel = ['Fraca', 'Fraca', 'Boa', 'Forte'] as const;
 
 export function SignUp() {
   const colors = useColors();
-  const { signUp } = useAuth();
+  const { signUp, setAvatarUrl } = useAuth();
+  const [photo, setPhoto] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,6 +43,13 @@ export function SignUp() {
     setLoading(true);
     try {
       await signUp(parsed.data.fullName, parsed.data.email, parsed.data.password);
+      // A foto sobe depois da conta criada; se falhar, dá para trocar no Perfil.
+      if (photo) {
+        setAvatarUrl(photo);
+        uploadAvatar(photo)
+          .then(setAvatarUrl)
+          .catch(() => setAvatarUrl(null));
+      }
     } catch (e) {
       if (e instanceof ApiError && e.fieldErrors) setErrors(e.fieldErrors);
       setFormError(e instanceof ApiError ? e.message : 'Não foi possível criar sua conta agora.');
@@ -50,6 +60,24 @@ export function SignUp() {
 
   return (
     <AuthShell title="Crie sua conta" subtitle="Leva menos de um minuto.">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={photo ? 'Trocar foto de perfil' : 'Adicionar foto de perfil'}
+        onPress={() =>
+          chooseAvatarSource(
+            (source) => void pickAvatar(source).then((uri) => uri && setPhoto(uri)),
+            photo ? () => setPhoto(null) : undefined,
+          )
+        }
+        style={({ pressed }) => [styles.photoRow, { opacity: pressed ? 0.7 : 1 }]}>
+        <Avatar url={photo} name={fullName} size={64} editable />
+        <View style={styles.photoText}>
+          <Text variant="bodyStrong">{photo ? 'Foto escolhida' : 'Adicionar foto'}</Text>
+          <Text variant="caption" color="textSecondary">
+            Opcional. Você pode mudar depois no Perfil.
+          </Text>
+        </View>
+      </Pressable>
       <TextField
         label="Nome"
         value={fullName}
@@ -117,6 +145,8 @@ export function SignUp() {
 
 const styles = StyleSheet.create({
   passwordBlock: { gap: spacing.sm },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  photoText: { flex: 1, gap: spacing.xxs },
   strength: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   bar: { flex: 1, height: 4, borderRadius: radius.full },
 });

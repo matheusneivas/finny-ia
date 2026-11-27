@@ -18,6 +18,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  /** Caminho relativo da foto na API (ex.: /api/v1/users/me/avatar?v=abc) ou null. */
+  avatarUrl?: string | null;
   onboardingCompleted: boolean;
   plan: 'FREE' | 'PREMIUM';
   planExpiresAt?: string | null;
@@ -169,6 +171,7 @@ export interface ChatStats {
 
 export interface Profile {
   fullName?: string;
+  avatarUrl?: string | null;
   birthDate?: string | null;
   occupation?: string | null;
   incomeRange?: IncomeRange | null;

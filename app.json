@@ -53,6 +53,14 @@
         {
           "faceIDPermission": "O Fini usa o Face ID para proteger seus dados financeiros."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Fini usa suas fotos para você escolher a foto de perfil.",
+          "cameraPermission": "O Fini usa a câmera para você tirar sua foto de perfil.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

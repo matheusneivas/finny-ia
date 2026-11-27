@@ -1,7 +1,8 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useEffect, useState } from 'react';
-import { Alert, Platform, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
+import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon, type IconName } from '@/components/icon';
@@ -9,7 +10,10 @@ import { ProgressBar } from '@/components/misc';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { useChatStats, useProfile } from '@/hooks/queries';
+import { ApiError } from '@/lib/api/client';
+import { avatarApi } from '@/lib/api/endpoints';
 import { useAuth } from '@/lib/auth/auth-context';
+import { chooseAvatarSource, pickAvatar, uploadAvatar } from '@/lib/avatar';
 import { usePreferences } from '@/lib/preferences';
 import { radius, spacing, useColors } from '@/theme';
 
@@ -48,7 +52,8 @@ function SettingRow({
 
 export function ProfileScreen() {
   const colors = useColors();
-  const { user, signOut } = useAuth();
+  const { user, signOut, setAvatarUrl } = useAuth();
+  const [photoBusy, setPhotoBusy] = useState(false);
   const profile = useProfile();
   const stats = useChatStats();
   const { hideValues, biometricLock, setPreference } = usePreferences();
@@ -80,12 +85,33 @@ export function ProfileScreen() {
   }
 
   const name = profile.data?.fullName || user?.name || 'Você';
-  const initials = name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join('');
+  const avatarUrl = user?.avatarUrl ?? profile.data?.avatarUrl ?? null;
+
+  async function changePhoto(source: 'library' | 'camera') {
+    const local = await pickAvatar(source);
+    if (!local) return;
+    const previous = avatarUrl;
+    setAvatarUrl(local); // mostra na hora; troca pela URL do servidor quando subir
+    setPhotoBusy(true);
+    try {
+      setAvatarUrl(await uploadAvatar(local));
+    } catch (e) {
+      setAvatarUrl(previous);
+      Alert.alert('Não foi possível salvar a foto', e instanceof ApiError ? e.message : 'Tente de novo em instantes.');
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    const previous = avatarUrl;
+    setAvatarUrl(null);
+    try {
+      await avatarApi.remove();
+    } catch {
+      setAvatarUrl(previous);
+    }
+  }
 
   const used = stats.data?.messagesUsedThisMonth ?? 0;
   const limit = stats.data?.monthlyLimit ?? null;
@@ -94,23 +120,31 @@ export function ProfileScreen() {
     <Screen title="Perfil">
       <Card>
         <View style={styles.identity}>
-          <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
-            <Text variant="heading" color="primary">
-              {initials || '•'}
-            </Text>
-          </View>
-          <View style={styles.flex}>
-            <Text variant="heading">{name}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Alterar foto de perfil"
+            disabled={photoBusy}
+            onPress={() => chooseAvatarSource((src) => void changePhoto(src), avatarUrl ? () => void removePhoto() : undefined)}
+            style={({ pressed }) => ({ opacity: pressed || photoBusy ? 0.6 : 1 })}>
+            <Avatar url={avatarUrl} name={name} size={64} editable />
+          </Pressable>
+          <View style={styles.identityText}>
+            <View style={styles.nameRow}>
+              <Text variant="heading" numberOfLines={1} style={styles.shrink}>
+                {name}
+              </Text>
+              <View style={[styles.plan, { backgroundColor: user?.plan === 'PREMIUM' ? colors.aiSoft : colors.surfaceMuted }]}>
+                <Text variant="caption" color={user?.plan === 'PREMIUM' ? 'ai' : 'textSecondary'}>
+                  {user?.plan === 'PREMIUM' ? 'Premium' : 'Grátis'}
+                </Text>
+              </View>
+            </View>
             {user?.email ? (
-              <Text variant="label" color="textSecondary">
+              // Uma linha só: e-mails longos são cortados no meio (início e domínio ficam visíveis).
+              <Text variant="label" color="textSecondary" numberOfLines={1} ellipsizeMode="middle">
                 {user.email}
               </Text>
             ) : null}
-          </View>
-          <View style={[styles.plan, { backgroundColor: user?.plan === 'PREMIUM' ? colors.aiSoft : colors.surfaceMuted }]}>
-            <Text variant="caption" color={user?.plan === 'PREMIUM' ? 'ai' : 'textSecondary'}>
-              {user?.plan === 'PREMIUM' ? 'Premium' : 'Grátis'}
-            </Text>
           </View>
         </View>
         {limit != null ? (
@@ -183,8 +217,10 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  avatar: { width: 52, height: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  identityText: { flex: 1, minWidth: 0, gap: spacing.xxs },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  shrink: { flexShrink: 1 },
   plan: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs, borderRadius: radius.full },
   usage: { gap: spacing.sm },
   usageHead: { flexDirection: 'row', justifyContent: 'space-between' },
