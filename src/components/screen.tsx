@@ -1,6 +1,7 @@
 import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useIsDesktop } from '@/hooks/use-is-desktop';
 import { maxContentWidth, spacing, useColors } from '@/theme';
 
 import { Text } from './text';
@@ -32,6 +33,7 @@ export function Screen({
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const desktop = useIsDesktop();
 
   const header = title ? (
     <View style={styles.header}>
@@ -51,8 +53,8 @@ export function Screen({
 
   const padding: ViewStyle = {
     paddingTop: insets.top + spacing.lg,
-    // Espaço para a barra de abas (flutuante na web).
-    paddingBottom: bottomInset ? insets.bottom + spacing.xxxl + (Platform.OS === 'web' ? spacing.xxxl * 2 : 0) : 0,
+    // Espaço para a barra de abas (flutuante na web estreita; no computador o menu fica ao lado).
+    paddingBottom: bottomInset ? insets.bottom + spacing.xxxl + (Platform.OS === 'web' && !desktop ? spacing.xxxl * 2 : 0) : 0,
   };
 
   if (!scroll) {

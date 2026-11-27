@@ -18,15 +18,27 @@ import { tokenStorage } from './token-storage';
  */
 const USER_KEY = 'fini.user';
 
+/** Web: perfil fica no sessionStorage, junto com o refresh token (some ao fechar a aba). */
+function webSession(): Storage | null {
+  try {
+    return typeof window !== 'undefined' ? window.sessionStorage : null;
+  } catch {
+    return null;
+  }
+}
+
 async function saveUser(user: User | null) {
-  if (Platform.OS === 'web') return; // web: sessão vive só na aba
+  if (Platform.OS === 'web') {
+    if (user) webSession()?.setItem(USER_KEY, JSON.stringify(user));
+    else webSession()?.removeItem(USER_KEY);
+    return;
+  }
   if (user) await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
   else await SecureStore.deleteItemAsync(USER_KEY);
 }
 
 async function loadUser(): Promise<User | null> {
-  if (Platform.OS === 'web') return null;
-  const raw = await SecureStore.getItemAsync(USER_KEY);
+  const raw = Platform.OS === 'web' ? (webSession()?.getItem(USER_KEY) ?? null) : await SecureStore.getItemAsync(USER_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as User;

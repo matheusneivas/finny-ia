@@ -16,6 +16,10 @@ Por padrão o app usa a API no ar em `https://fini-api-rosi.onrender.com` (plano
 
 Antes de subir código: `npx tsc --noEmit && npx expo lint`.
 
+## Site
+
+O mesmo código vira o site (menu lateral no computador). Como publicar grátis na Vercel e liberar o endereço na API: [docs/SITE.md](docs/SITE.md).
+
 ## Estrutura
 
 ```
