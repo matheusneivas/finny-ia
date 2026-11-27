@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import { env } from '@/config/env';
 import { tokenStorage } from '@/lib/auth/token-storage';
 
@@ -138,7 +140,9 @@ export function subscribeSlowRequests(listener: (slow: boolean) => void) {
 
 /** Acorda o servidor em segundo plano assim que o app abre. */
 export function warmUpServer() {
-  void transport('/actuator/health', { method: 'GET' }).catch(() => undefined);
+  // Web: o /actuator não tem CORS (não precisa). "no-cors" só acorda o servidor, sem ler a resposta
+  // e sem erro no console do navegador.
+  void transport('/actuator/health', { method: 'GET', mode: Platform.OS === 'web' ? 'no-cors' : undefined }).catch(() => undefined);
 }
 
 async function rawRequest(path: string, opts: RequestOptions, accessToken: string | null): Promise<Response> {
