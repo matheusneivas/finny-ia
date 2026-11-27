@@ -54,7 +54,13 @@ export function SignUp() {
       }
     } catch (e) {
       if (e instanceof ApiError && e.fieldErrors) setErrors(e.fieldErrors);
-      setFormError(e instanceof ApiError ? e.message : 'Não foi possível criar sua conta agora.');
+      setFormError(
+        e instanceof ApiError && e.isNetwork
+          ? `${e.message} Se o problema continuar, tente "Já tenho conta": a conta pode ter sido criada mesmo assim.`
+          : e instanceof ApiError
+            ? e.message
+            : 'Não foi possível criar sua conta agora.',
+      );
     } finally {
       setLoading(false);
     }

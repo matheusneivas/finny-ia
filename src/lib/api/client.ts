@@ -142,9 +142,21 @@ async function rawRequest(path: string, opts: RequestOptions, accessToken: strin
   }
 }
 
+const TIMEOUT_MESSAGE = 'O servidor demorou demais para responder. Tente de novo em instantes.';
+
+/** Último erro de rede (só o tipo, nunca URL ou dados). Ajuda a diagnosticar o "status 0". */
+let lastNetworkError: { at: string; kind: 'timeout' | 'network'; name: string } | null = null;
+export function getLastNetworkError() {
+  return lastNetworkError;
+}
+
 async function rawRequestInner(path: string, opts: RequestOptions, accessToken: string | null): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? env.requestTimeoutMs);
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, opts.timeoutMs ?? env.requestTimeoutMs);
   opts.signal?.addEventListener('abort', () => controller.abort());
 
   const headers: Record<string, string> = { ...opts.headers, Accept: 'application/json' };
@@ -161,8 +173,14 @@ async function rawRequestInner(path: string, opts: RequestOptions, accessToken: 
       body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body),
       signal: controller.signal,
     });
-  } catch {
-    // Não registramos o erro bruto: pode conter URL e dados da requisição.
+  } catch (e) {
+    // Guardamos só o tipo do erro (sem URL nem dados) para diagnóstico.
+    lastNetworkError = { at: new Date().toISOString(), kind: timedOut ? 'timeout' : 'network', name: e instanceof Error ? e.name : typeof e };
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.warn(`[api] ${lastNetworkError.kind}: ${lastNetworkError.name}`);
+    }
+    if (timedOut) throw new ApiError(0, TIMEOUT_MESSAGE);
     throw new ApiError(0, FRIENDLY_MESSAGES[0]);
   } finally {
     clearTimeout(timeout);
