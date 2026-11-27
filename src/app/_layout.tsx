@@ -11,10 +11,12 @@ import { ServerWakingBanner } from '@/components/server-waking-banner';
 import { ApiError } from '@/lib/api/client';
 import { setupApi } from '@/lib/api/setup';
 import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
+import { installChunkReload } from '@/lib/chunk-reload';
 import { PreferencesProvider } from '@/lib/preferences';
 import { getColors } from '@/theme';
 
 setupApi();
+installChunkReload();
 SplashScreen.preventAutoHideAsync();
 
 function makeQueryClient() {
