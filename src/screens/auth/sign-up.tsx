@@ -26,6 +26,7 @@ export function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [emailTaken, setEmailTaken] = useState(false);
   const [loading, setLoading] = useState(false);
   const emailRef = useRef<TextFieldHandle>(null);
   const passwordRef = useRef<TextFieldHandle>(null);
@@ -36,6 +37,7 @@ export function SignUp() {
 
   async function submit() {
     setFormError(null);
+    setEmailTaken(false);
     const parsed = signUpSchema.safeParse({ fullName, email, password, confirmPassword });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error));
@@ -53,6 +55,11 @@ export function SignUp() {
           .catch(() => setAvatarUrl(null));
       }
     } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        // E-mail já cadastrado: oferece entrar ou recuperar a senha.
+        setEmailTaken(true);
+        return;
+      }
       if (e instanceof ApiError && e.fieldErrors) setErrors(e.fieldErrors);
       setFormError(
         e instanceof ApiError && e.isNetwork
@@ -150,6 +157,29 @@ export function SignUp() {
         returnKeyType="go"
         onSubmitEditing={submit}
       />
+      {emailTaken ? (
+        <View style={[styles.taken, { backgroundColor: colors.warningSoft }]} accessibilityLiveRegion="assertive">
+          <Text variant="bodyStrong">Já existe uma conta com esse e-mail.</Text>
+          <Text variant="label" color="textSecondary">
+            Quer entrar ou recuperar a senha?
+          </Text>
+          <View style={styles.takenActions}>
+            <Button
+              title="Entrar"
+              size="sm"
+              style={styles.flex}
+              onPress={() => router.replace({ pathname: '/entrar', params: { email: email.trim() } })}
+            />
+            <Button
+              title="Recuperar senha"
+              size="sm"
+              variant="secondary"
+              style={styles.flex}
+              onPress={() => router.push({ pathname: '/esqueci-senha', params: { email: email.trim() } })}
+            />
+          </View>
+        </View>
+      ) : null}
       {formError ? (
         <Text variant="label" color="danger" accessibilityLiveRegion="assertive">
           {formError}
@@ -165,6 +195,9 @@ export function SignUp() {
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  taken: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.md },
+  takenActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   passwordBlock: { gap: spacing.sm },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   photoText: { flex: 1, gap: spacing.xxs },

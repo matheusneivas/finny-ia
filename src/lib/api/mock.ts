@@ -260,6 +260,8 @@ export const mockTransport: Transport = async (path, init) => {
     return auth(user?.name ?? 'Matheus', body.email);
   }
   if (p === '/auth/register' && method === 'POST') {
+    // Demonstração do e-mail já cadastrado.
+    if (String(body?.email).toLowerCase() === 'ja@existe.com') return json(409, { status: 409, error: 'Conflict', message: 'E-mail já cadastrado' });
     lastCodeSentAt = Date.now();
     return auth(body.fullName, body.email, false);
   }
