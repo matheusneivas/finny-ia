@@ -48,6 +48,9 @@ export function ForgotPassword({ initialEmail }: { initialEmail?: string }) {
         // Já pediu há pouco: o código anterior ainda vale.
         start(e.retryAfter);
         setStep('reset');
+      } else if (e instanceof ApiError && e.status === 404) {
+        // API ainda sem a rota de troca de senha.
+        setFormError('A troca de senha pelo app chega em breve. Por enquanto, fale com o suporte do Fini.');
       } else {
         setFormError(e instanceof ApiError ? e.message : 'Não foi possível enviar agora.');
       }
