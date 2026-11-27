@@ -53,3 +53,6 @@ export const motion = {
 
 /** Largura máxima do conteúdo na web/tablet. */
 export const maxContentWidth = 720;
+
+/** Na web, a partir desta largura o site usa menu lateral (layout de computador). */
+export const desktopBreakpoint = 900;

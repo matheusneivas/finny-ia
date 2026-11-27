@@ -9,6 +9,7 @@ import { IconButton } from '@/components/button';
 import { RichText } from '@/components/rich-text';
 import { Text } from '@/components/text';
 import { qk, useChatStats } from '@/hooks/queries';
+import { useIsDesktop } from '@/hooks/use-is-desktop';
 import { ApiError } from '@/lib/api/client';
 import { chatApi } from '@/lib/api/endpoints';
 import type { ChatHistoryItem, ProposedAction, ProposedActionStatus } from '@/lib/api/types';
@@ -37,6 +38,7 @@ interface Message {
 export function Chat() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const desktop = useIsDesktop();
   const keyboardOpen = useKeyboardOpen();
   const queryClient = useQueryClient();
   const stats = useChatStats();
@@ -209,7 +211,9 @@ export function Chat() {
             paddingBottom: keyboardOpen
               ? spacing.sm
               : Platform.OS === 'web'
-                ? 96 // barra de abas flutuante da web
+                ? desktop
+                  ? spacing.xl // computador: menu lateral, nada embaixo
+                  : 96 // barra de abas flutuante da web
                 : // No nativo, a área segura já inclui a barra de abas (NativeTabs).
                   Math.max(insets.bottom, spacing.md) + spacing.sm,
           },

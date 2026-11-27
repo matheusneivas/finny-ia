@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FiniMark } from '@/components/brand';
@@ -12,7 +12,12 @@ const features: { icon: IconName; title: string; text: string }[] = [
   { icon: 'chat', title: 'Converse com o Finny', text: '“Gastei 45 no almoço” e pronto, está na planilha.' },
   { icon: 'sheet', title: 'Veja para onde vai o dinheiro', text: 'Resumo do mês por categoria, sem fórmula.' },
   { icon: 'goals', title: 'Metas de verdade', text: 'Carro, casa, viagem: quanto guardar por mês.' },
-  { icon: 'shield', title: 'Seus dados protegidos', text: 'Acesso criptografado e bloqueio com Face ID.' },
+  {
+    icon: 'shield',
+    title: 'Seus dados protegidos',
+    text:
+      Platform.OS === 'web' ? 'Conexão criptografada do começo ao fim.' : 'Acesso criptografado e bloqueio com Face ID.',
+  },
 ];
 
 export function Welcome() {
