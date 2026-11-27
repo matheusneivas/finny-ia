@@ -1,3 +1,4 @@
+import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert, Linking, Platform } from 'react-native';
@@ -64,8 +65,9 @@ export async function uploadAvatar(localUri: string): Promise<string> {
     const blob = await (await fetch(localUri)).blob();
     form.append('file', blob, 'avatar.jpg');
   } else {
-    // Formato do React Native para enviar arquivo local em multipart.
-    form.append('file', { uri: localUri, name: 'avatar.jpg', type: 'image/jpeg' } as unknown as Blob);
+    // No SDK 58 o fetch global é o expo/fetch, que só aceita Blob de verdade no
+    // multipart. O File do expo-file-system é um Blob (tipo pela extensão .jpg).
+    form.append('file', new File(localUri), 'avatar.jpg');
   }
   try {
     const res = await avatarApi.upload(form);
