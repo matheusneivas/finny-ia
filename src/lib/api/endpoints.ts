@@ -34,6 +34,8 @@ export interface RegisterInput {
   cpf: string;
   /** Celular com DDD, ex.: (11) 98765-4321. */
   phone: string;
+  /** Marcou "Li e aceito os Termos de Uso e a Política de Privacidade". */
+  acceptedTerms: boolean;
 }
 
 /** A API usa a chave para não criar o mesmo registro duas vezes. */
@@ -98,6 +100,12 @@ export const chatApi = {
 export const profileApi = {
   get: () => api.get<Profile>(`${V1}/users/profile`),
   update: (input: Partial<Profile>) => api.put<Profile>(`${V1}/users/profile`, input),
+};
+
+/** Direitos LGPD: baixar meus dados e excluir minha conta. */
+export const accountApi = {
+  exportData: () => api.get<Record<string, unknown>>(`${V1}/users/me/export`, { timeoutMs: 120_000 }),
+  remove: (password: string) => api.post<void>(`${V1}/users/me/delete`, { password }),
 };
 
 export const avatarApi = {

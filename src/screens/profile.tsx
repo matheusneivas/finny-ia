@@ -16,6 +16,7 @@ import { ApiError } from '@/lib/api/client';
 import { avatarApi } from '@/lib/api/endpoints';
 import { useAuth } from '@/lib/auth/auth-context';
 import { chooseAvatarSource, pickAvatar, uploadAvatar } from '@/lib/avatar';
+import { downloadMyData } from '@/lib/export-data';
 import { usePreferences } from '@/lib/preferences';
 import { radius, spacing, useColors } from '@/theme';
 import { formatFullDate } from '@/utils/dates';
@@ -57,6 +58,7 @@ export function ProfileScreen() {
   const colors = useColors();
   const { user, signOut, setAvatarUrl } = useAuth();
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const profile = useProfile();
   const stats = useChatStats();
   const { hideValues, biometricLock, setPreference } = usePreferences();
@@ -113,6 +115,17 @@ export function ProfileScreen() {
       await avatarApi.remove();
     } catch {
       setAvatarUrl(previous);
+    }
+  }
+
+  async function exportData() {
+    setExporting(true);
+    try {
+      await downloadMyData();
+    } catch (e) {
+      Alert.alert('Não foi possível baixar seus dados', e instanceof ApiError ? e.message : 'Tente de novo em instantes.');
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -243,7 +256,26 @@ export function ProfileScreen() {
         <SettingRow icon="shield" title="Seus dados" subtitle="Conexão criptografada. A IA só sugere, quem salva é você." />
       </Card>
 
+      <Text variant="overline" color="textSecondary">
+        Seus direitos (LGPD)
+      </Text>
+      <Card onPress={exporting ? undefined : () => void exportData()} accessibilityLabel="Baixar meus dados">
+        <SettingRow
+          icon="receipt"
+          title={exporting ? 'Preparando seus dados...' : 'Baixar meus dados'}
+          subtitle="Arquivo com tudo o que o Finny guarda sobre você"
+          right={<Icon name="chevronRight" size={16} color={colors.textMuted} />}
+        />
+      </Card>
+      <Card onPress={() => router.push('/privacidade')} accessibilityLabel="Política de Privacidade">
+        <SettingRow icon="shield" title="Política de Privacidade" right={<Icon name="chevronRight" size={16} color={colors.textMuted} />} />
+      </Card>
+      <Card onPress={() => router.push('/termos')} accessibilityLabel="Termos de Uso">
+        <SettingRow icon="receipt" title="Termos de Uso" right={<Icon name="chevronRight" size={16} color={colors.textMuted} />} />
+      </Card>
+
       <Button title="Sair da conta" variant="danger" icon="logout" fullWidth onPress={confirmSignOut} />
+      <Button title="Excluir minha conta" variant="ghost" icon="trash" fullWidth onPress={() => router.push('/excluir-conta')} />
       <Text variant="caption" color="textMuted" align="center">
         Finny · versão 1.0.0
       </Text>

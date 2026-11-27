@@ -319,6 +319,14 @@ export const mockTransport: Transport = async (path, init) => {
   }
   if (p === '/users/profile') return json(200, { fullName: user?.name, avatarUrl: user?.avatarUrl ?? null, onboardingCompleted: user?.onboardingCompleted, communicationStyle: 'FRIENDLY', knowledgeLevel: 'BEGINNER' });
 
+  if (p === '/users/me/export' && method === 'GET') {
+    return json(200, { conta: { nome: user?.name, email: user?.email }, lancamentos: transactions, metas: goals });
+  }
+  if (p === '/users/me/delete' && method === 'POST') {
+    if (!body?.password) return json(400, { message: 'Digite sua senha para confirmar' });
+    user = null;
+    return json(204);
+  }
   if (p === '/users/me/avatar' && method === 'PUT') {
     // Demonstração: guarda o arquivo local escolhido (não sobe para lugar nenhum).
     const file = (init.body as unknown as { _parts?: [string, { uri?: string }][] })?._parts?.[0]?.[1];

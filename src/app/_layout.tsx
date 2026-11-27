@@ -116,7 +116,15 @@ function RootNavigator() {
           name="premium"
           options={sheetOptions}
         />
+        <Stack.Screen
+          name="excluir-conta"
+          options={sheetOptions}
+        />
       </Stack.Protected>
+
+      {/* Política e Termos abrem com ou sem conta (links do cadastro e do Perfil) */}
+      <Stack.Screen name="privacidade" options={sheetOptions} />
+      <Stack.Screen name="termos" options={sheetOptions} />
 
     </Stack>
   );
