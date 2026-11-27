@@ -10,7 +10,8 @@ import { closeSheet, SheetFrame } from '@/components/sheet-frame';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { useCreateGoal } from '@/hooks/queries';
-import { ApiError } from '@/lib/api/client';
+import { PlanLimitNotice } from '@/components/plan-limit-notice';
+import { ApiError, isPlanLimitError } from '@/lib/api/client';
 import { spacing } from '@/theme';
 import { brDateToIso, maskBrDate, monthsUntil, today } from '@/utils/dates';
 import { centsToAmount, formatMoney } from '@/utils/money';
@@ -31,12 +32,14 @@ export function GoalForm() {
   const [deadline, setDeadline] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [planLimit, setPlanLimit] = useState<string | null>(null);
 
   const iso = brDateToIso(deadline);
   const perMonth = iso && cents > 0 ? centsToAmount(cents) / monthsUntil(iso) : null;
 
   async function save() {
     setFormError(null);
+    setPlanLimit(null);
     const next: Record<string, string> = {};
     if (!name.trim()) next.name = 'Dê um nome para a meta';
     if (cents <= 0) next.amount = 'Informe o valor';
@@ -48,7 +51,8 @@ export function GoalForm() {
       await create.mutateAsync({ name: name.trim(), targetAmount: centsToAmount(cents), deadline: iso!, icon });
       closeSheet();
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : 'Não foi possível criar a meta.');
+      if (isPlanLimitError(e)) setPlanLimit(e.message);
+      else setFormError(e instanceof ApiError ? e.message : 'Não foi possível criar a meta.');
     }
   }
 
@@ -57,6 +61,7 @@ export function GoalForm() {
       title="Nova meta"
       footer={
         <>
+          {planLimit ? <PlanLimitNotice message={planLimit} compact /> : null}
           {formError ? (
             <Text variant="label" color="danger">
               {formError}

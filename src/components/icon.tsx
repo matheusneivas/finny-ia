@@ -46,6 +46,11 @@ const icons = {
   plane: { ios: 'airplane', md: 'flight' },
   school: { ios: 'graduationcap.fill', md: 'school' },
   trendUp: { ios: 'chart.line.uptrend.xyaxis', md: 'trending_up' },
+  // Premium e pagamento
+  crown: { ios: 'crown.fill', md: 'workspace_premium' },
+  card: { ios: 'creditcard.fill', md: 'credit_card' },
+  qrcode: { ios: 'qrcode', md: 'qr_code_2' },
+  copy: { ios: 'doc.on.doc', md: 'content_copy' },
 } as const satisfies Record<string, { ios: SFSymbol; md: AndroidSymbol }>;
 
 export type IconName = keyof typeof icons;

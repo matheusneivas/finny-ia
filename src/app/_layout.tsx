@@ -110,6 +110,10 @@ function RootNavigator() {
           name="atalhos"
           options={sheetOptions}
         />
+        <Stack.Screen
+          name="premium"
+          options={sheetOptions}
+        />
       </Stack.Protected>
 
     </Stack>

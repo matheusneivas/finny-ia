@@ -12,7 +12,8 @@ import { closeSheet, SheetFrame } from '@/components/sheet-frame';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { useCategories, useCreateTransaction, useDeleteTransaction, useUpdateTransaction } from '@/hooks/queries';
-import { ApiError } from '@/lib/api/client';
+import { PlanLimitNotice } from '@/components/plan-limit-notice';
+import { ApiError, isPlanLimitError } from '@/lib/api/client';
 import { transactionsApi } from '@/lib/api/endpoints';
 import type { ExpenseFrequency, Transaction, TransactionInput, TransactionType } from '@/lib/api/types';
 import { spacing } from '@/theme';
@@ -93,6 +94,7 @@ function Form({
   const [frequency, setFrequency] = useState<ExpenseFrequency>(existing?.frequency ?? 'ONCE');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [planLimit, setPlanLimit] = useState<string | null>(null);
   const [yesterday] = useState(getYesterday);
 
   const categories = useCategories(type);
@@ -104,6 +106,7 @@ function Form({
 
   async function save() {
     setFormError(null);
+    setPlanLimit(null);
     const iso = brDateToIso(date);
     const next: Record<string, string> = {};
     if (cents <= 0) next.amount = 'Informe um valor';
@@ -126,7 +129,8 @@ function Form({
       else await create.mutateAsync(input);
       closeSheet();
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : 'Não foi possível salvar.');
+      if (isPlanLimitError(e)) setPlanLimit(e.message);
+      else setFormError(e instanceof ApiError ? e.message : 'Não foi possível salvar.');
     }
   }
 
@@ -151,6 +155,7 @@ function Form({
       title={editing ? 'Editar lançamento' : 'Novo lançamento'}
       footer={
         <>
+          {planLimit ? <PlanLimitNotice message={planLimit} compact /> : null}
           {formError ? (
             <Text variant="label" color="danger">
               {formError}

@@ -3,6 +3,7 @@ import { env } from '@/config/env';
 import { api } from './client';
 import type {
   AuthResponse,
+  BillingPlans,
   Category,
   CategorySummary,
   ChatHistoryItem,
@@ -13,7 +14,9 @@ import type {
   GoalProgress,
   OnboardingStepResponse,
   Page,
+  PixCharge,
   Profile,
+  Subscription,
   Transaction,
   TransactionInput,
   TransactionSummary,
@@ -23,6 +26,16 @@ import type {
 
 const V1 = '/api/v1';
 
+export interface RegisterInput {
+  fullName: string;
+  email: string;
+  password: string;
+  /** Com ou sem pontuação. */
+  cpf: string;
+  /** Celular com DDD, ex.: (11) 98765-4321. */
+  phone: string;
+}
+
 /** A API usa a chave para não criar o mesmo registro duas vezes. */
 function idem(key?: string): Record<string, string> | undefined {
   return key && /^[\w-]{1,64}$/.test(key) ? { 'Idempotency-Key': key } : undefined;
@@ -31,8 +44,7 @@ function idem(key?: string): Record<string, string> | undefined {
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<AuthResponse>(`${V1}/auth/login`, { email, password }, { auth: false }),
-  register: (fullName: string, email: string, password: string) =>
-    api.post<AuthResponse>(`${V1}/auth/register`, { fullName, email, password }, { auth: false }),
+  register: (input: RegisterInput) => api.post<AuthResponse>(`${V1}/auth/register`, input, { auth: false }),
   logout: (refreshToken: string | null) => api.post<void>(`${V1}/auth/logout`, { refreshToken }),
   verifyEmail: (code: string) => api.post<User>(`${V1}/auth/email/verify`, { code }),
   resendVerification: () => api.post<void>(`${V1}/auth/email/resend`),
@@ -97,4 +109,16 @@ export const onboardingApi = {
   status: () => api.get<OnboardingStepResponse>(`${V1}/onboarding/status`),
   step: (n: 1 | 2 | 3 | 4 | 5, body: Record<string, unknown>) =>
     api.post<OnboardingStepResponse>(`${V1}/onboarding/step/${n}`, body),
+};
+
+export const billingApi = {
+  plans: () => api.get<BillingPlans>(`${V1}/billing/plans`),
+  subscription: () => api.get<Subscription>(`${V1}/billing/subscription`),
+  /** Teste grátis do Premium, uma vez por pessoa (409 se já usou). */
+  trial: () => api.post<Subscription>(`${V1}/billing/trial`),
+  /** Cria a assinatura no cartão; abra card.checkoutUrl (Mercado Pago). */
+  card: () => api.post<Subscription>(`${V1}/billing/card`),
+  pix: (idempotencyKey: string) =>
+    api.post<PixCharge>(`${V1}/billing/pix`, undefined, { headers: { 'Idempotency-Key': idempotencyKey } }),
+  cancelCard: () => api.post<Subscription>(`${V1}/billing/card/cancel`),
 };

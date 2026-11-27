@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { isValidCpf, isValidPhone } from './documents';
+
 /** Mesmas regras da API (RegisterRequest), checadas antes de enviar. */
 export const signInSchema = z.object({
   email: z.string().trim().min(1, 'Informe seu e-mail').email('E-mail inválido'),
@@ -19,8 +21,15 @@ const passwordField = z
 
 export const signUpSchema = z
   .object({
-    fullName: z.string().trim().min(2, 'Informe seu nome').max(100, 'Nome muito longo'),
+    fullName: z
+      .string()
+      .trim()
+      .min(2, 'Informe seu nome completo')
+      .max(120, 'Nome muito longo')
+      .refine((n) => n.split(/\s+/).filter(Boolean).length >= 2, 'Informe nome e sobrenome'),
     email: emailField,
+    cpf: z.string().refine(isValidCpf, 'CPF inválido'),
+    phone: z.string().refine(isValidPhone, 'Celular inválido. Use o DDD, ex.: (11) 98765-4321'),
     password: passwordField,
     confirmPassword: z.string().min(1, 'Repita a senha'),
   })

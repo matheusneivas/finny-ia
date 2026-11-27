@@ -213,3 +213,37 @@ export interface ApiErrorBody {
   code?: string;
   errors?: Record<string, string>;
 }
+
+// ---------- Plano grátis e Premium (/billing) ----------
+
+export interface BillingPlans {
+  /** false = pagamentos desligados no servidor: esconda os botões de pagar. */
+  enabled: boolean;
+  monthlyPrice: number;
+  trialDays: number;
+  pixDays: number;
+  free: { transactionsPerMonth: number; activeGoals: number; chatMessagesPerMonth: number };
+  premiumChatMessagesPerMonth: number;
+}
+
+export type CardSubscriptionStatus = 'PENDING' | 'ACTIVE' | 'CANCELED';
+
+export interface Subscription {
+  plan: 'FREE' | 'PREMIUM';
+  /** Até quando o Premium vale (null = grátis ou sem prazo). */
+  premiumUntil: string | null;
+  trialAvailable: boolean;
+  card: { status: CardSubscriptionStatus; checkoutUrl: string | null } | null;
+  usage: { transactionsThisMonth: number; activeGoals: number };
+}
+
+export interface PixCharge {
+  paymentId: string;
+  amount: number;
+  premiumDays: number;
+  /** Código "copia e cola". */
+  qrCode: string;
+  qrCodeBase64: string;
+  ticketUrl?: string | null;
+  expiresAt: string;
+}

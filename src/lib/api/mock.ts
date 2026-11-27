@@ -58,6 +58,25 @@ let goals: Goal[] = [
 const history: ChatHistoryItem[] = [];
 const idemTx = new Map<string, string>();
 const DEMO_CODE = '123456';
+
+/** Demonstração do Premium: o "pagamento" é aprovado sozinho alguns segundos depois. */
+const DEMO_PLANS = {
+  enabled: true,
+  monthlyPrice: 9.9,
+  trialDays: 7,
+  pixDays: 30,
+  free: { transactionsPerMonth: 15, activeGoals: 1, chatMessagesPerMonth: 5 },
+  premiumChatMessagesPerMonth: 1000,
+};
+let premiumUntil: string | null = null;
+let trialUsed = false;
+let card: { status: 'PENDING' | 'ACTIVE' | 'CANCELED'; checkoutUrl: string | null } | null = null;
+const addDays = (days: number, from?: string | null) => {
+  const base = from && new Date(from) > new Date() ? new Date(from) : new Date();
+  base.setDate(base.getDate() + days);
+  return base.toISOString().slice(0, 19);
+};
+const demoPlan = () => (premiumUntil && new Date(premiumUntil) > new Date() ? 'PREMIUM' : 'FREE') as 'FREE' | 'PREMIUM';
 let lastCodeSentAt = 0;
 
 const json = (status: number, body?: unknown) =>
@@ -366,6 +385,10 @@ export const mockTransport: Transport = async (path, init) => {
 
   if (p === '/goals' && method === 'GET') return json(200, goals.map(withProgress));
   if (p === '/goals' && method === 'POST') {
+    const active = goals.filter((g) => g.status === 'ACTIVE').length;
+    if (demoPlan() === 'FREE' && active >= DEMO_PLANS.free.activeGoals) {
+      return json(402, { status: 402, code: 'PLAN_LIMIT_REACHED', message: `O plano grátis permite ${DEMO_PLANS.free.activeGoals} meta ativa.` });
+    }
     const g = withProgress({ id: uid(), savedAmount: 0, status: 'ACTIVE', progressPercentage: 0, ...body });
     goals = [...goals, g];
     return json(201, g);
@@ -397,6 +420,55 @@ export const mockTransport: Transport = async (path, init) => {
     return json(204);
   }
   if (p === '/chat/history' && method === 'DELETE') { history.length = 0; return json(200, {}); }
+  if (p.startsWith('/billing/')) {
+    const subscription = () => {
+      const plan = demoPlan();
+      if (user) user = { ...user, plan, planExpiresAt: plan === 'PREMIUM' ? premiumUntil : null };
+      return {
+        plan,
+        premiumUntil: plan === 'PREMIUM' ? premiumUntil : null,
+        trialAvailable: !trialUsed,
+        card,
+        usage: { transactionsThisMonth: transactions.length, activeGoals: goals.filter((g) => g.status === 'ACTIVE').length },
+      };
+    };
+    if (p === '/billing/plans') return json(200, DEMO_PLANS);
+    if (p === '/billing/subscription') return json(200, subscription());
+    if (p === '/billing/trial' && method === 'POST') {
+      if (trialUsed) return json(409, { status: 409, message: 'Você já usou o teste grátis.' });
+      trialUsed = true;
+      premiumUntil = addDays(DEMO_PLANS.trialDays, premiumUntil);
+      return json(200, subscription());
+    }
+    if (p === '/billing/card' && method === 'POST') {
+      card = { status: 'PENDING', checkoutUrl: 'https://www.mercadopago.com.br/' };
+      setTimeout(() => {
+        card = { status: 'ACTIVE', checkoutUrl: null };
+        premiumUntil = addDays(30, premiumUntil);
+      }, 6000);
+      return json(200, subscription());
+    }
+    if (p === '/billing/card/cancel' && method === 'POST') {
+      if (card) card = { ...card, status: 'CANCELED' };
+      return json(200, subscription());
+    }
+    if (p === '/billing/pix' && method === 'POST') {
+      setTimeout(() => {
+        premiumUntil = addDays(DEMO_PLANS.pixDays, premiumUntil);
+      }, 8000);
+      return json(200, {
+        paymentId: uid(),
+        amount: DEMO_PLANS.monthlyPrice,
+        premiumDays: DEMO_PLANS.pixDays,
+        qrCode: '00020126580014br.gov.bcb.pix0136demonstracao-finny5204000053039865405' + '9.905802BR5905FINNY6009SAO PAULO6304ABCD',
+        // PNG 1x1 só para a demonstração (o servidor real manda o QR code de verdade).
+        qrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        ticketUrl: null,
+        expiresAt: addDays(1),
+      });
+    }
+    return json(404, { message: 'Rota de demonstração não encontrada' });
+  }
   if (p === '/chat/stats') { const used = history.filter((h) => h.role === 'USER').length; return json(200, { plan: 'FREE', messagesUsedThisMonth: used, monthlyLimit: 50, remainingThisMonth: 50 - used }); }
 
   return json(404, { message: 'Rota não encontrada no modo demonstração' });
