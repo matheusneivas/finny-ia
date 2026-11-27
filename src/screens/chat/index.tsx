@@ -10,7 +10,8 @@ import { RichText } from '@/components/rich-text';
 import { Text } from '@/components/text';
 import { qk, useChatStats } from '@/hooks/queries';
 import { useIsDesktop } from '@/hooks/use-is-desktop';
-import { ApiError } from '@/lib/api/client';
+import { PlanLimitNotice } from '@/components/plan-limit-notice';
+import { ApiError, isPlanLimitError } from '@/lib/api/client';
 import { chatApi } from '@/lib/api/endpoints';
 import type { ChatHistoryItem, ProposedAction, ProposedActionStatus } from '@/lib/api/types';
 import { clearActionStates, loadActionStates, saveActionState } from '@/lib/chat-action-store';
@@ -33,6 +34,8 @@ interface Message {
   content: string;
   actions?: ProposedAction[];
   failed?: boolean;
+  /** Resposta 402: mostra o convite para o Premium no lugar do texto. */
+  planLimit?: boolean;
 }
 
 export function Chat() {
@@ -95,7 +98,9 @@ export function Chat() {
       } catch (e) {
         setLocal((cur) => cur.map((m) => (m.id === userMsg.id ? { ...m, failed: true } : m)));
         const msg = e instanceof ApiError ? e.message : 'Não consegui responder agora.';
-        setLocal((cur) => [{ id: `local-${Date.now()}-e`, role: 'ASSISTANT', content: msg }, ...cur]);
+        const planLimit = isPlanLimitError(e);
+        setLocal((cur) => [{ id: `local-${Date.now()}-e`, role: 'ASSISTANT', content: msg, planLimit }, ...cur]);
+        if (planLimit) void queryClient.invalidateQueries({ queryKey: qk.chatStats });
       } finally {
         setSending(false);
       }
@@ -272,6 +277,16 @@ function MessageRow({
 }) {
   const colors = useColors();
   const mine = message.role === 'USER';
+  if (message.planLimit) {
+    return (
+      <View style={[styles.messageRow, styles.theirs]}>
+        <FiniAvatar size={28} />
+        <View style={styles.messageCol}>
+          <PlanLimitNotice message={message.content} />
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={[styles.messageRow, mine ? styles.mine : styles.theirs]}>
       {!mine ? <FiniAvatar size={28} /> : null}

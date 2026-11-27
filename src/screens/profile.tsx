@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Icon, type IconName } from '@/components/icon';
 import { ProgressBar } from '@/components/misc';
+import { openPremium } from '@/components/plan-limit-notice';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { useChatStats, useProfile } from '@/hooks/queries';
@@ -17,6 +18,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { chooseAvatarSource, pickAvatar, uploadAvatar } from '@/lib/avatar';
 import { usePreferences } from '@/lib/preferences';
 import { radius, spacing, useColors } from '@/theme';
+import { formatFullDate } from '@/utils/dates';
 
 const knowledgeLabel = { BEGINNER: 'Iniciante', INTERMEDIATE: 'Intermediário', ADVANCED: 'Avançado' } as const;
 const toneLabel = { FRIENDLY: 'Amigável', DIRECT: 'Direto', FORMAL: 'Formal' } as const;
@@ -161,6 +163,27 @@ export function ProfileScreen() {
             <ProgressBar value={(used / Math.max(limit, 1)) * 100} tone={used >= limit ? 'danger' : 'ai'} height={6} />
           </View>
         ) : null}
+      </Card>
+
+      <Text variant="overline" color="textSecondary">
+        Seu plano
+      </Text>
+      <Card
+        tone={user?.plan === 'PREMIUM' ? 'aiSoft' : 'surface'}
+        onPress={() => openPremium()}
+        accessibilityLabel={user?.plan === 'PREMIUM' ? 'Gerenciar o Premium' : 'Conhecer o Premium'}>
+        <SettingRow
+          icon="crown"
+          title={user?.plan === 'PREMIUM' ? 'Finny Premium' : 'Plano grátis'}
+          subtitle={
+            user?.plan === 'PREMIUM'
+              ? user.planExpiresAt
+                ? `Ativo até ${formatFullDate(user.planExpiresAt.slice(0, 10))}`
+                : 'Ativo'
+              : 'Assine o Premium e use sem limite'
+          }
+          right={<Icon name="chevronRight" size={16} color={colors.textMuted} />}
+        />
       </Card>
 
       <Text variant="overline" color="textSecondary">

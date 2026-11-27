@@ -10,6 +10,7 @@ import { ApiError } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { chooseAvatarSource, pickAvatar, uploadAvatar } from '@/lib/avatar';
 import { radius, spacing, useColors } from '@/theme';
+import { maskCpf, maskPhone } from '@/utils/documents';
 import { fieldErrors, passwordStrength, signUpSchema } from '@/utils/validation';
 
 import { AuthShell } from './auth-shell';
@@ -22,6 +23,8 @@ export function SignUp() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,6 +32,8 @@ export function SignUp() {
   const [emailTaken, setEmailTaken] = useState(false);
   const [loading, setLoading] = useState(false);
   const emailRef = useRef<TextFieldHandle>(null);
+  const cpfRef = useRef<TextFieldHandle>(null);
+  const phoneRef = useRef<TextFieldHandle>(null);
   const passwordRef = useRef<TextFieldHandle>(null);
   const confirmRef = useRef<TextFieldHandle>(null);
 
@@ -38,7 +43,7 @@ export function SignUp() {
   async function submit() {
     setFormError(null);
     setEmailTaken(false);
-    const parsed = signUpSchema.safeParse({ fullName, email, password, confirmPassword });
+    const parsed = signUpSchema.safeParse({ fullName, email, cpf, phone, password, confirmPassword });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error));
       return;
@@ -46,7 +51,13 @@ export function SignUp() {
     setErrors({});
     setLoading(true);
     try {
-      await signUp(parsed.data.fullName, parsed.data.email, parsed.data.password);
+      await signUp({
+        fullName: parsed.data.fullName,
+        email: parsed.data.email,
+        password: parsed.data.password,
+        cpf: parsed.data.cpf,
+        phone: parsed.data.phone,
+      });
       // A foto sobe depois da conta criada; se falhar, dá para trocar no Perfil.
       if (photo) {
         setAvatarUrl(photo);
@@ -56,8 +67,21 @@ export function SignUp() {
       }
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
+        if (/cpf/i.test(e.message)) {
+          // Um cadastro por CPF: a pessoa já tem conta com outro e-mail.
+          setErrors({ cpf: 'Esse CPF já tem uma conta no Finny. Entre com o e-mail dela ou recupere a senha.' });
+          return;
+        }
         // E-mail já cadastrado: oferece entrar ou recuperar a senha.
         setEmailTaken(true);
+        return;
+      }
+      if (e instanceof ApiError && e.status === 422 && /cpf/i.test(e.message)) {
+        setErrors({ cpf: 'CPF inválido' });
+        return;
+      }
+      if (e instanceof ApiError && e.status === 422 && /telefone/i.test(e.message)) {
+        setErrors({ phone: e.message });
         return;
       }
       if (e instanceof ApiError && e.fieldErrors) setErrors(e.fieldErrors);
@@ -94,7 +118,7 @@ export function SignUp() {
         </View>
       </Pressable>
       <TextField
-        label="Nome"
+        label="Nome completo"
         value={fullName}
         onChangeText={setFullName}
         error={errors.fullName}
@@ -115,6 +139,33 @@ export function SignUp() {
         autoComplete="email"
         keyboardType="email-address"
         textContentType="emailAddress"
+        returnKeyType="next"
+        onSubmitEditing={() => cpfRef.current?.focus()}
+      />
+      <TextField
+        ref={cpfRef}
+        label="CPF"
+        placeholder="000.000.000-00"
+        value={cpf}
+        onChangeText={(t) => setCpf(maskCpf(t))}
+        error={errors.cpf}
+        hint="Um cadastro por pessoa. Guardamos o CPF de forma protegida, nunca em texto."
+        keyboardType="number-pad"
+        maxLength={14}
+        returnKeyType="next"
+        onSubmitEditing={() => phoneRef.current?.focus()}
+      />
+      <TextField
+        ref={phoneRef}
+        label="Celular"
+        placeholder="(11) 98765-4321"
+        value={phone}
+        onChangeText={(t) => setPhone(maskPhone(t))}
+        error={errors.phone}
+        autoComplete="tel"
+        textContentType="telephoneNumber"
+        keyboardType="phone-pad"
+        maxLength={15}
         returnKeyType="next"
         onSubmitEditing={() => passwordRef.current?.focus()}
       />

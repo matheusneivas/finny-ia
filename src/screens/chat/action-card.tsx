@@ -15,7 +15,8 @@ import {
   useGoals,
   useUpdateTransaction,
 } from '@/hooks/queries';
-import { ApiError } from '@/lib/api/client';
+import { PlanLimitNotice } from '@/components/plan-limit-notice';
+import { ApiError, isPlanLimitError } from '@/lib/api/client';
 import type { ProposedAction } from '@/lib/api/types';
 import { radius, spacing, useColors } from '@/theme';
 import { formatFullDate } from '@/utils/dates';
@@ -59,6 +60,7 @@ export function ActionCard({
 }) {
   const colors = useColors();
   const [error, setError] = useState<string | null>(null);
+  const [planLimit, setPlanLimit] = useState<string | null>(null);
   const categories = useCategories();
   const goals = useGoals();
   const createTx = useCreateTransaction();
@@ -77,6 +79,7 @@ export function ActionCard({
     if (busy.current || state !== 'pending') return;
     busy.current = true;
     setError(null);
+    setPlanLimit(null);
     onStateChange('saving');
     try {
       switch (action.type) {
@@ -101,7 +104,8 @@ export function ActionCard({
       if (Platform.OS !== 'web') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onStateChange('done');
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Não foi possível salvar.');
+      if (isPlanLimitError(e)) setPlanLimit(e.message);
+      else setError(e instanceof ApiError ? e.message : 'Não foi possível salvar.');
       onStateChange('pending');
     } finally {
       busy.current = false;
@@ -174,6 +178,7 @@ export function ActionCard({
           {error}
         </Text>
       ) : null}
+      {planLimit ? <PlanLimitNotice message={planLimit} compact /> : null}
 
       {done ? (
         <View style={styles.status}>

@@ -4,7 +4,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState, type Rea
 import { Platform } from 'react-native';
 
 import { setEmailNotVerifiedHandler, setSessionExpiredHandler } from '@/lib/api/client';
-import { authApi, onboardingApi, profileApi } from '@/lib/api/endpoints';
+import { authApi, onboardingApi, profileApi, type RegisterInput } from '@/lib/api/endpoints';
 import type { AuthResponse, User } from '@/lib/api/types';
 
 import { clearActionStates } from '@/lib/chat-action-store';
@@ -53,10 +53,12 @@ interface AuthContextValue {
   status: Status;
   user: User | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (fullName: string, email: string, password: string) => Promise<void>;
+  signUp: (input: RegisterInput) => Promise<void>;
   signOut: () => Promise<void>;
   markOnboardingDone: () => void;
   setAvatarUrl: (url: string | null) => void;
+  /** Atualiza o plano guardado depois de assinar/testar o Premium. */
+  setPlan: (plan: User['plan'], planExpiresAt: string | null) => void;
   /** Confere o código de 6 dígitos enviado por e-mail. */
   verifyEmail: (code: string) => Promise<void>;
 }
@@ -152,8 +154,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (fullName: string, email: string, password: string) =>
-      handleAuth(await authApi.register(fullName.trim(), email.trim().toLowerCase(), password)),
+    async (input: RegisterInput) =>
+      handleAuth(
+        await authApi.register({ ...input, fullName: input.fullName.trim().replace(/\s+/g, ' '), email: input.email.trim().toLowerCase() }),
+      ),
     [handleAuth],
   );
 
@@ -182,6 +186,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setPlan = useCallback((plan: User['plan'], planExpiresAt: string | null) => {
+    setUser((u) => {
+      if (!u || (u.plan === plan && (u.planExpiresAt ?? null) === planExpiresAt)) return u;
+      const next = { ...u, plan, planExpiresAt };
+      void saveUser(next);
+      return next;
+    });
+  }, []);
+
   const verifyEmail = useCallback(async (code: string) => {
     const updated = await authApi.verifyEmail(code);
     setUser((u) => {
@@ -194,8 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl, verifyEmail }),
-    [status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl, verifyEmail],
+    () => ({ status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl, setPlan, verifyEmail }),
+    [status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl, setPlan, verifyEmail],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

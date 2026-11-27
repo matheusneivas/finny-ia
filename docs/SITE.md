@@ -26,7 +26,16 @@ O navegador só deixa o site conversar com a API se a API autorizar o endereço 
 
 Sem esse passo, o site abre mas o login falha com “sem conexão”.
 
-## 3. Testar
+## 3. Volta do pagamento (Premium)
+
+Quando os pagamentos estiverem ligados na API (Mercado Pago), coloque também no Render, em Environment:
+
+`BILLING_RETURN_URL` = `https://finny-ia.vercel.app/premium`
+
+É para essa página que o Mercado Pago manda a pessoa depois de cadastrar o cartão. Ela confere
+sozinha, por até 1 minuto, se o Premium já foi liberado.
+
+## 4. Testar
 
 Abra o endereço do site, crie uma conta ou entre. Na primeira vez do dia a API pode levar
 cerca de 1 minuto para acordar (plano grátis do Render); o site mostra “Acordando o servidor…”.

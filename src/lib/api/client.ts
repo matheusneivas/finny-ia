@@ -8,10 +8,13 @@ export class ApiError extends Error {
   readonly fieldErrors?: Record<string, string>;
   /** Segundos do Retry-After (429). */
   readonly retryAfter?: number;
+  /** Código da API, ex.: PLAN_LIMIT_REACHED (402), EMAIL_NOT_VERIFIED (403). */
+  readonly code?: string;
 
-  constructor(status: number, message: string, fieldErrors?: Record<string, string>, retryAfter?: number) {
+  constructor(status: number, message: string, fieldErrors?: Record<string, string>, retryAfter?: number, code?: string) {
     super(message);
     this.retryAfter = retryAfter;
+    this.code = code;
     this.name = 'ApiError';
     this.status = status;
     this.fieldErrors = fieldErrors;
@@ -23,6 +26,15 @@ export class ApiError extends Error {
   get isNetwork() {
     return this.status === 0;
   }
+  /** Passou do limite do plano grátis: mostrar o convite para o Premium. */
+  get isPlanLimit() {
+    return this.status === 402 || this.code === 'PLAN_LIMIT_REACHED';
+  }
+}
+
+/** true quando o erro é o limite do plano grátis (402 PLAN_LIMIT_REACHED). */
+export function isPlanLimitError(e: unknown): e is ApiError {
+  return e instanceof ApiError && e.isPlanLimit;
 }
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -71,6 +83,7 @@ const FRIENDLY_MESSAGES: Record<number, string> = {
   0: 'Não consegui falar com o servidor. Verifique sua internet e tente de novo em instantes.',
   400: 'Confira os dados e tente de novo.',
   401: 'Sua sessão expirou. Entre novamente.',
+  402: 'Você chegou ao limite do plano grátis deste mês.',
   403: 'Você não tem permissão para isso.',
   404: 'Não encontramos o que você procurava.',
   409: 'Esse registro já existe.',
@@ -101,7 +114,7 @@ async function toApiError(res: Response): Promise<ApiError> {
       message = `Muitas tentativas. Tente de novo em ${retryAfter}s.`;
     }
   }
-  return new ApiError(res.status, message, body?.errors, retryAfter);
+  return new ApiError(res.status, message, body?.errors, retryAfter, body?.code);
 }
 
 /**
