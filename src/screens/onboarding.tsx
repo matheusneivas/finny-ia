@@ -87,7 +87,7 @@ export function Onboarding() {
 
   const steps = [
     {
-      title: `Prazer, ${user?.name?.split(' ')[0] || 'tudo bem'}! Eu sou o Fini.`,
+      title: `Prazer, ${user?.name?.split(' ')[0] || 'tudo bem'}! Eu sou o Finny.`,
       subtitle: 'Algumas perguntas rápidas para eu te ajudar do jeito certo.',
       valid: !!birthIso,
       body: (

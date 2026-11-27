@@ -7,7 +7,7 @@ import { EMPTY_WIDGET_PROPS, type FiniWidgetProps } from './types';
 /**
  * Widget da tela inicial do Android (Jetpack Compose via Expo UI).
  * Mostra saldo do mês e a meta principal. No Android os botões de widget
- * ainda não abrem telas do app; para anotar rápido, segure o ícone do Fini
+ * ainda não abrem telas do app; para anotar rápido, segure o ícone do Finny
  * (atalhos) ou arraste um atalho para a tela inicial.
  */
 const FiniWidget = (props: FiniWidgetProps, env: WidgetEnvironment) => {
@@ -20,7 +20,7 @@ const FiniWidget = (props: FiniWidgetProps, env: WidgetEnvironment) => {
   if (!props.signedIn) {
     return (
       <Column modifiers={[fillMaxSize(), background(bg), cornerRadius(20), paddingAll(16)]}>
-        <Text color="#0E9F6E" style={{ fontSize: 15, fontWeight: 'bold' }}>Fini</Text>
+        <Text color="#0E9F6E" style={{ fontSize: 15, fontWeight: 'bold' }}>Finny</Text>
         <Text color={muted} style={{ fontSize: 13 }}>Entre no app para ver seu saldo aqui.</Text>
       </Column>
     );

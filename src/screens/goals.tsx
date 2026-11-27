@@ -36,7 +36,7 @@ export function Goals() {
         <EmptyState
           icon="goals"
           title="Qual é o seu próximo sonho?"
-          message="Crie uma meta e o Fini calcula quanto guardar por mês para chegar lá."
+          message="Crie uma meta e o Finny calcula quanto guardar por mês para chegar lá."
           actionLabel="Criar meta"
           onAction={() => router.push('/meta')}
         />

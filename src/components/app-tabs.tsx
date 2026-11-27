@@ -13,7 +13,7 @@ export function AppTabs() {
       labelStyle={{ selected: { color: colors.primary } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} md="chat" />
-        <NativeTabs.Trigger.Label>Fini</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Finny</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="planilha">
         <NativeTabs.Trigger.Icon sf={{ default: 'chart.pie', selected: 'chart.pie.fill' }} md="pie_chart" />

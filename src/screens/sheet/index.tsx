@@ -127,7 +127,7 @@ export function Sheet() {
         <EmptyState
           icon="receipt"
           title="Nada por aqui ainda"
-          message="Adicione um lançamento ou conte para o Fini no chat."
+          message="Adicione um lançamento ou conte para o Finny no chat."
           actionLabel="Adicionar"
           onAction={() => router.push('/transacao')}
         />
@@ -185,7 +185,7 @@ function TransactionRow({ t, hidden, last, borderColor }: { t: Transaction; hidd
         </Text>
         <Text variant="caption" color="textSecondary" numberOfLines={1}>
           {t.category.name}
-          {t.source === 'AI' || t.source === 'OCR' ? ' · pelo Fini' : ''}
+          {t.source === 'AI' || t.source === 'OCR' ? ' · pelo Finny' : ''}
         </Text>
       </View>
       <Text variant="bodyStrong" color={income ? 'income' : 'text'}>

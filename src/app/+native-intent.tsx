@@ -1,7 +1,7 @@
 import { matchShortcutLink, setPendingShortcut } from '@/lib/shortcuts';
 
 /**
- * Links de atalho (fini://novo-gasto, nova-entrada, guardar, chat) vindos do
+ * Links de atalho (finny://novo-gasto, nova-entrada, guardar, chat) vindos do
  * widget, da Siri / app Atalhos ou de qualquer lugar. O app abre no início e
  * as abas abrem o formulário por cima, já com login conferido.
  */

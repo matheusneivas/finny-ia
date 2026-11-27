@@ -71,7 +71,7 @@ export function ProfileScreen() {
   async function toggleBiometric(next: boolean) {
     // Confirma a biometria antes de ligar, para não trancar o usuário fora.
     if (next) {
-      const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Ativar bloqueio do Fini' });
+      const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Ativar bloqueio do Finny' });
       if (!res.success) return;
     }
     setPreference('biometricLock', next);
@@ -152,7 +152,7 @@ export function ProfileScreen() {
           <View style={styles.usage}>
             <View style={styles.usageHead}>
               <Text variant="label" color="textSecondary">
-                Conversas com o Fini este mês
+                Conversas com o Finny este mês
               </Text>
               <Text variant="label">
                 {used}/{limit}
@@ -164,7 +164,7 @@ export function ProfileScreen() {
       </Card>
 
       <Text variant="overline" color="textSecondary">
-        Como o Fini te conhece
+        Como o Finny te conhece
       </Text>
       <Card>
         <SettingRow icon="school" title="Nível em finanças" subtitle={profile.data?.knowledgeLevel ? knowledgeLabel[profile.data.knowledgeLevel] : '—'} />
@@ -222,7 +222,7 @@ export function ProfileScreen() {
 
       <Button title="Sair da conta" variant="danger" icon="logout" fullWidth onPress={confirmSignOut} />
       <Text variant="caption" color="textMuted" align="center">
-        Fini · versão 1.0.0
+        Finny · versão 1.0.0
       </Text>
     </Screen>
   );

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Fini",
+    "name": "Finny",
     "slug": "finny-ia",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fini",
+    "scheme": "finny",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
@@ -29,8 +29,8 @@
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png",
-      "name": "Fini",
-      "shortName": "Fini",
+      "name": "Finny",
+      "shortName": "Finny",
       "themeColor": "#0E9F6E",
       "backgroundColor": "#F6F7F9"
     },
@@ -51,14 +51,14 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "O Fini usa o Face ID para proteger seus dados financeiros."
+          "faceIDPermission": "O Finny usa o Face ID para proteger seus dados financeiros."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "O Fini usa suas fotos para você escolher a foto de perfil.",
-          "cameraPermission": "O Fini usa a câmera para você tirar sua foto de perfil.",
+          "photosPermission": "O Finny usa suas fotos para você escolher a foto de perfil.",
+          "cameraPermission": "O Finny usa a câmera para você tirar sua foto de perfil.",
           "microphonePermission": false
         }
       ],
@@ -69,7 +69,7 @@
           "widgets": [
             {
               "name": "FiniWidget",
-              "displayName": "Fini",
+              "displayName": "Finny",
               "description": "Saldo do mês, sua meta e atalhos para anotar gastos e entradas.",
               "ios": {
                 "supportedFamilies": [

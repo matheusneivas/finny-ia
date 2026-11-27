@@ -219,7 +219,7 @@ function fakeAi(message: string): { reply: string; proposedActions?: ProposedAct
   if (has(text, /^(oi|ola|bom dia|boa tarde|boa noite|e ai|opa|hey)\b/) || has(text, /(ajuda|o que voce faz|como funciona)/)) {
     return {
       reply:
-        'Oi! Sou o Fini. Posso registrar gastos e entradas (“gastei 45 no almoço”), criar metas (“quero juntar 5 mil para uma viagem em 10 meses”), ' +
+        'Oi! Sou o Finny. Posso registrar gastos e entradas (“gastei 45 no almoço”), criar metas (“quero juntar 5 mil para uma viagem em 10 meses”), ' +
         'mostrar seu resumo (“quanto sobrou este mês?”) e onde mais você gasta. Tudo que eu sugerir salvar passa por você antes.',
     };
   }

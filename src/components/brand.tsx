@@ -6,7 +6,7 @@ import { radius, useColors } from '@/theme';
 import { Icon } from './icon';
 import { Text } from './text';
 
-/** Marca do Fini: selo com gradiente verde → violeta (dinheiro + IA). */
+/** Marca do Finny: selo com gradiente verde → violeta (dinheiro + IA). */
 export function FiniMark({ size = 56 }: { size?: number }) {
   const colors = useColors();
   return (
@@ -32,7 +32,7 @@ export function Wordmark() {
   return (
     <View style={styles.row}>
       <FiniMark size={36} />
-      <Text variant="title">Fini</Text>
+      <Text variant="title">Finny</Text>
     </View>
   );
 }

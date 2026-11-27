@@ -97,7 +97,7 @@ export function ShortcutsScreen() {
       {Platform.OS === 'ios' ? (
         <>
           <Text variant="overline" color="textSecondary">
-            “E aí Siri, gastei no Fini”
+            “E aí Siri, gastei no Finny”
           </Text>
           <Card padding="lg" style={styles.steps}>
             <Step n={1}>Abra o app Atalhos e toque em + para criar um atalho.</Step>
@@ -115,7 +115,7 @@ export function ShortcutsScreen() {
                 {copied === 'siri' ? 'Copiado' : 'Copiar'}
               </Text>
             </Pressable>
-            <Step n={4}>Dê o nome “Gastei no Fini”. Pronto: fale com a Siri, diga o valor e o Fini abre com ele preenchido. Você só confere e salva.</Step>
+            <Step n={4}>Dê o nome “Gastei no Finny”. Pronto: fale com a Siri, diga o valor e o Finny abre com ele preenchido. Você só confere e salva.</Step>
           </Card>
         </>
       ) : null}
@@ -126,9 +126,9 @@ export function ShortcutsScreen() {
       <Card padding="lg" style={styles.steps}>
         <Text variant="label">
           <Text variant="label" style={styles.bold}>
-            Segurar o ícone do Fini:{' '}
+            Segurar o ícone do Finny:{' '}
           </Text>
-          aparecem Novo gasto, Nova entrada, Guardar na meta e Falar com o Fini.
+          aparecem Novo gasto, Nova entrada, Guardar na meta e Falar com o Finny.
           {Platform.OS === 'android' ? ' Dá para arrastar um deles para a tela inicial.' : ''}
         </Text>
         <Text variant="label">

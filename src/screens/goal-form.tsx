@@ -85,7 +85,7 @@ export function GoalForm() {
       {perMonth ? (
         <Card tone="aiSoft">
           <Text variant="label" color="ai">
-            Plano do Fini
+            Plano do Finny
           </Text>
           <Text variant="body">
             Guardando <Text variant="bodyStrong">{formatMoney(perMonth)}</Text> por mês, você chega lá no prazo.

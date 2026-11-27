@@ -1,6 +1,6 @@
-# Fini — app
+# Finny — app
 
-App do Fini, assistente financeiro com IA. Expo SDK 58 + Expo Router + TypeScript. Roda em iOS, Android e web com o mesmo código.
+App do Finny, assistente financeiro com IA. Expo SDK 58 + Expo Router + TypeScript. Roda em iOS, Android e web com o mesmo código.
 
 ## Rodar
 
@@ -22,7 +22,7 @@ Antes de subir código: `npx tsc --noEmit && npx expo lint`.
 src/app/          rotas (Expo Router). Só rotas aqui.
   (auth)/         boas-vindas, entrar, criar-conta
   onboarding.tsx  5 passos curtos
-  (tabs)/         Fini (chat), Planilha, Metas, Perfil
+  (tabs)/         Finny (chat), Planilha, Metas, Perfil
   transacao, meta, aporte   formulários em folha (formSheet)
 src/screens/      corpo de cada tela
 src/components/   design system: Text, Button, Card, TextField, MoneyField, Icon...

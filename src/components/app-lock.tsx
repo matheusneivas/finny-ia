@@ -25,7 +25,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
 
   const unlock = useCallback(async () => {
     const res = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Desbloquear o Fini',
+      promptMessage: 'Desbloquear o Finny',
       cancelLabel: 'Cancelar',
       disableDeviceFallback: false,
     });
@@ -65,7 +65,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
           <View style={[styles.badge, { backgroundColor: colors.primarySoft }]}>
             <Icon name="lock" size={32} color={colors.primary} />
           </View>
-          <Text variant="heading">Fini bloqueado</Text>
+          <Text variant="heading">Finny bloqueado</Text>
           {showLock ? <Button title="Desbloquear" icon="faceId" onPress={() => void unlock()} /> : null}
         </View>
       ) : null}

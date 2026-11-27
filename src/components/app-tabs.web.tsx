@@ -6,7 +6,7 @@ import { maxContentWidth, radius, spacing, useColors } from '@/theme';
 import { Icon, type IconName } from './icon';
 
 const tabs: { name: string; title: string; icon: IconName }[] = [
-  { name: 'index', title: 'Fini', icon: 'chat' },
+  { name: 'index', title: 'Finny', icon: 'chat' },
   { name: 'planilha', title: 'Planilha', icon: 'sheet' },
   { name: 'metas', title: 'Metas', icon: 'goals' },
   { name: 'perfil', title: 'Perfil', icon: 'profile' },

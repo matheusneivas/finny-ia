@@ -77,7 +77,7 @@ const FRIENDLY_MESSAGES: Record<number, string> = {
   422: 'Você atingiu o limite deste mês.',
   429: 'Muitas tentativas. Aguarde um pouco e tente de novo.',
   500: 'Tivemos um problema no servidor. Tente de novo em instantes.',
-  503: 'O Fini está indisponível agora. Essa mensagem não contou no seu limite.',
+  503: 'O Finny está indisponível agora. Essa mensagem não contou no seu limite.',
 };
 
 async function toApiError(res: Response): Promise<ApiError> {

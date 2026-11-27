@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import type { Href } from 'expo-router';
 
 /**
- * Atalhos do Fini. Cada um tem um link direto (fini://novo-gasto) que serve
+ * Atalhos do Finny. Cada um tem um link direto (finny://novo-gasto) que serve
  * para o widget, as ações do ícone, a Siri / app Atalhos e links em geral.
  *
  * Os parâmetros que chegam por link vêm de fora do app: tudo é validado aqui
@@ -22,7 +22,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: 'novo-gasto', title: 'Novo gasto', subtitle: 'Anotar um gasto', iosSymbol: 'minus.circle.fill' },
   { id: 'nova-entrada', title: 'Nova entrada', subtitle: 'Anotar um ganho', iosSymbol: 'plus.circle.fill' },
   { id: 'guardar', title: 'Guardar na meta', subtitle: 'Colocar dinheiro numa meta', iosSymbol: 'banknote.fill' },
-  { id: 'chat', title: 'Falar com o Fini', subtitle: 'Abrir o chat', iosSymbol: 'bubble.left.and.bubble.right.fill' },
+  { id: 'chat', title: 'Falar com o Finny', subtitle: 'Abrir o chat', iosSymbol: 'bubble.left.and.bubble.right.fill' },
 ];
 
 /** Valor vindo de link: "30", "30,50", "1.234,56". Devolve null se não for um valor válido. */
@@ -68,7 +68,7 @@ export function shortcutTarget(id: ShortcutId, params: { valor?: string; descric
 }
 
 /**
- * Link completo do atalho. No app instalado é fini://novo-gasto; no Expo Go
+ * Link completo do atalho. No app instalado é finny://novo-gasto; no Expo Go
  * é exp://…/--/novo-gasto (por isso dá para testar já).
  */
 export function shortcutUrl(id: ShortcutId, query?: Record<string, string>) {
@@ -91,7 +91,7 @@ function parseQuery(qs: string): Record<string, string> {
 }
 
 /**
- * Reconhece um link de atalho: fini://novo-gasto?valor=30, ou no Expo Go
+ * Reconhece um link de atalho: finny://novo-gasto?valor=30, ou no Expo Go
  * exp://…/--/novo-gasto?valor=30. Devolve para onde ir, ou null se não for atalho.
  */
 export function matchShortcutLink(path: string): Href | null {

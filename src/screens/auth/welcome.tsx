@@ -9,7 +9,7 @@ import { Text } from '@/components/text';
 import { maxContentWidth, radius, spacing, useColors } from '@/theme';
 
 const features: { icon: IconName; title: string; text: string }[] = [
-  { icon: 'chat', title: 'Converse com o Fini', text: '“Gastei 45 no almoço” e pronto, está na planilha.' },
+  { icon: 'chat', title: 'Converse com o Finny', text: '“Gastei 45 no almoço” e pronto, está na planilha.' },
   { icon: 'sheet', title: 'Veja para onde vai o dinheiro', text: 'Resumo do mês por categoria, sem fórmula.' },
   { icon: 'goals', title: 'Metas de verdade', text: 'Carro, casa, viagem: quanto guardar por mês.' },
   { icon: 'shield', title: 'Seus dados protegidos', text: 'Acesso criptografado e bloqueio com Face ID.' },
@@ -28,7 +28,7 @@ export function Welcome() {
             Seu dinheiro,{'\n'}em uma conversa.
           </Text>
           <Text variant="body" color="textSecondary" align="center">
-            O Fini organiza seus gastos, acompanha suas metas e te ajuda a decidir melhor.
+            O Finny organiza seus gastos, acompanha suas metas e te ajuda a decidir melhor.
           </Text>
         </View>
 

@@ -136,7 +136,7 @@ export function Chat() {
           <FiniAvatar size={36} />
           <View style={styles.flex}>
             <View style={styles.titleRow}>
-              <Text variant="heading">Fini</Text>
+              <Text variant="heading">Finny</Text>
               {env.useMockApi ? (
                 <View style={[styles.demoBadge, { backgroundColor: colors.warningSoft }]}>
                   <Text variant="caption" color="warning">
@@ -218,13 +218,13 @@ export function Chat() {
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder="Escreva para o Fini…"
+            placeholder="Escreva para o Finny…"
             placeholderTextColor={colors.textMuted}
             selectionColor={colors.primary}
             multiline
             numberOfLines={Platform.OS === 'web' ? 1 : undefined}
             maxLength={MAX_LEN}
-            accessibilityLabel="Mensagem para o Fini"
+            accessibilityLabel="Mensagem para o Finny"
             onSubmitEditing={Platform.OS === 'web' ? () => void send(input) : undefined}
             blurOnSubmit={Platform.OS === 'web'}
             style={[typography.body, styles.input, { color: colors.text }]}

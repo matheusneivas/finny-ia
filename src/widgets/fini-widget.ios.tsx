@@ -34,7 +34,7 @@ const FiniWidget = (props: FiniWidgetProps, env: WidgetEnvironment) => {
   const green = '#0E9F6E';
   const red = '#E02424';
   const violet = '#6D4AFF';
-  const scheme = 'fini://';
+  const scheme = 'finny://';
 
   if (env.widgetFamily === 'accessoryCircular') {
     return (
@@ -48,7 +48,7 @@ const FiniWidget = (props: FiniWidgetProps, env: WidgetEnvironment) => {
   if (!props.signedIn) {
     return (
       <VStack alignment="leading" spacing={6} modifiers={[containerBackground(bg, 'widget'), widgetURL(`${scheme}chat`)]}>
-        <Text modifiers={[font({ size: 15, weight: 'bold' }), foregroundStyle(green)]}>Fini</Text>
+        <Text modifiers={[font({ size: 15, weight: 'bold' }), foregroundStyle(green)]}>Finny</Text>
         <Text modifiers={[font({ size: 13 }), foregroundStyle(muted)]}>Entre no app para ver seu saldo aqui.</Text>
       </VStack>
     );
@@ -73,7 +73,7 @@ const FiniWidget = (props: FiniWidgetProps, env: WidgetEnvironment) => {
     return (
       <VStack alignment="leading" spacing={8} modifiers={[containerBackground(bg, 'widget'), widgetURL(`${scheme}novo-gasto`)]}>
         <HStack>
-          <Text modifiers={[font({ size: 13, weight: 'bold' }), foregroundStyle(green)]}>Fini</Text>
+          <Text modifiers={[font({ size: 13, weight: 'bold' }), foregroundStyle(green)]}>Finny</Text>
           <Spacer />
           <Image systemName="plus.circle.fill" size={22} color={green} />
         </HStack>

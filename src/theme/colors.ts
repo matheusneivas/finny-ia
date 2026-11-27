@@ -1,8 +1,8 @@
 import { useColorScheme } from 'react-native';
 
 /**
- * Paleta do Fini. Toda cor do app sai daqui: nenhuma tela usa hex direto.
- * Verde-esmeralda = dinheiro crescendo; violeta = a IA (Fini).
+ * Paleta do Finny. Toda cor do app sai daqui: nenhuma tela usa hex direto.
+ * Verde-esmeralda = dinheiro crescendo; violeta = a IA (Finny).
  * Cada token tem um par claro/escuro com contraste AA sobre o fundo.
  */
 const palette = {
