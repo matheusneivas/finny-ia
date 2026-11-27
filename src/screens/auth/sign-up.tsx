@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { TextField, type TextFieldHandle } from '@/components/text-field';
 import { ApiError } from '@/lib/api/client';
@@ -31,6 +32,7 @@ export function SignUp() {
   const [formError, setFormError] = useState<string | null>(null);
   const [emailTaken, setEmailTaken] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const emailRef = useRef<TextFieldHandle>(null);
   const cpfRef = useRef<TextFieldHandle>(null);
   const phoneRef = useRef<TextFieldHandle>(null);
@@ -48,6 +50,10 @@ export function SignUp() {
       setErrors(fieldErrors(parsed.error));
       return;
     }
+    if (!acceptedTerms) {
+      setErrors({ terms: 'Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.' });
+      return;
+    }
     setErrors({});
     setLoading(true);
     try {
@@ -57,6 +63,7 @@ export function SignUp() {
         password: parsed.data.password,
         cpf: parsed.data.cpf,
         phone: parsed.data.phone,
+        acceptedTerms: true,
       });
       // A foto sobe depois da conta criada; se falhar, dá para trocar no Perfil.
       if (photo) {
@@ -236,10 +243,40 @@ export function SignUp() {
           {formError}
         </Text>
       ) : null}
+      <View style={styles.termsRow}>
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: acceptedTerms }}
+          accessibilityLabel="Li e aceito os Termos de Uso e a Política de Privacidade"
+          hitSlop={8}
+          onPress={() => {
+            setAcceptedTerms((v) => !v);
+            setErrors(({ terms: _terms, ...rest }) => rest);
+          }}
+          style={[
+            styles.checkbox,
+            { borderColor: errors.terms ? colors.danger : colors.border, backgroundColor: acceptedTerms ? colors.primary : 'transparent' },
+          ]}>
+          {acceptedTerms ? <Icon name="check" size={14} color={colors.onPrimary} /> : null}
+        </Pressable>
+        <Text variant="label" color="textSecondary" style={styles.flex}>
+          Li e aceito os{' '}
+          <Text variant="label" color="primary" accessibilityRole="link" onPress={() => router.push('/termos')}>
+            Termos de Uso
+          </Text>{' '}
+          e a{' '}
+          <Text variant="label" color="primary" accessibilityRole="link" onPress={() => router.push('/privacidade')}>
+            Política de Privacidade
+          </Text>
+          .
+        </Text>
+      </View>
+      {errors.terms ? (
+        <Text variant="caption" color="danger" accessibilityLiveRegion="assertive">
+          {errors.terms}
+        </Text>
+      ) : null}
       <Button title="Criar conta" size="lg" fullWidth loading={loading} onPress={submit} />
-      <Text variant="caption" color="textMuted" align="center">
-        Ao continuar, você concorda com os Termos de Uso e a Política de Privacidade.
-      </Text>
       <Button title="Já tenho conta" variant="ghost" fullWidth onPress={() => router.replace('/entrar')} />
     </AuthShell>
   );
@@ -250,6 +287,8 @@ const styles = StyleSheet.create({
   taken: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.md },
   takenActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   passwordBlock: { gap: spacing.sm },
+  termsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   photoText: { flex: 1, gap: spacing.xxs },
   strength: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
