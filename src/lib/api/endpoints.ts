@@ -18,6 +18,7 @@ import type {
   TransactionInput,
   TransactionSummary,
   TransactionType,
+  User,
 } from './types';
 
 const V1 = '/api/v1';
@@ -33,6 +34,11 @@ export const authApi = {
   register: (fullName: string, email: string, password: string) =>
     api.post<AuthResponse>(`${V1}/auth/register`, { fullName, email, password }, { auth: false }),
   logout: (refreshToken: string | null) => api.post<void>(`${V1}/auth/logout`, { refreshToken }),
+  verifyEmail: (code: string) => api.post<User>(`${V1}/auth/email/verify`, { code }),
+  resendVerification: () => api.post<void>(`${V1}/auth/email/resend`),
+  forgotPassword: (email: string) => api.post<void>(`${V1}/auth/password/forgot`, { email }, { auth: false }),
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    api.post<void>(`${V1}/auth/password/reset`, { email, code, newPassword }, { auth: false }),
 };
 
 export const transactionsApi = {

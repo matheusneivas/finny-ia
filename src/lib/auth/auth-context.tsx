@@ -45,6 +45,8 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   markOnboardingDone: () => void;
   setAvatarUrl: (url: string | null) => void;
+  /** Confere o código de 6 dígitos enviado por e-mail. */
+  verifyEmail: (code: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -155,9 +157,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const verifyEmail = useCallback(async (code: string) => {
+    const updated = await authApi.verifyEmail(code);
+    setUser((u) => {
+      if (!u) return u;
+      // A API devolve o usuário; o que importa aqui é a confirmação.
+      const next = { ...u, ...(updated ?? {}), emailVerified: true };
+      void saveUser(next);
+      return next;
+    });
+  }, []);
+
   const value = useMemo(
-    () => ({ status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl }),
-    [status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl],
+    () => ({ status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl, verifyEmail }),
+    [status, user, signIn, signUp, signOut, markOnboardingDone, setAvatarUrl, verifyEmail],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

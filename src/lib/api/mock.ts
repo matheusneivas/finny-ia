@@ -57,6 +57,8 @@ let goals: Goal[] = [
 ];
 const history: ChatHistoryItem[] = [];
 const idemTx = new Map<string, string>();
+const DEMO_CODE = '123456';
+let lastCodeSentAt = 0;
 
 const json = (status: number, body?: unknown) =>
   new Response(body === undefined ? null : JSON.stringify(body), {
@@ -248,8 +250,8 @@ export const mockTransport: Transport = async (path, init) => {
   const p = pathname.replace('/api/v1', '');
   const authed = !!(init.headers as Record<string, string> | undefined)?.Authorization;
 
-  const auth = (name: string, email: string) => {
-    user = { id: 'u-1', email, name, onboardingCompleted: user?.onboardingCompleted ?? false, avatarUrl: user?.avatarUrl ?? null, plan: 'FREE' };
+  const auth = (name: string, email: string, emailVerified = user?.emailVerified ?? true) => {
+    user = { id: 'u-1', email, name, onboardingCompleted: user?.onboardingCompleted ?? false, avatarUrl: user?.avatarUrl ?? null, plan: 'FREE', emailVerified };
     return json(200, { accessToken: `mock.${uid()}`, refreshToken: `mock.${uid()}`, tokenType: 'Bearer', user });
   };
 
@@ -257,9 +259,35 @@ export const mockTransport: Transport = async (path, init) => {
     if (!body?.email || !body?.password) return json(400, { message: 'Informe e-mail e senha.' });
     return auth(user?.name ?? 'Matheus', body.email);
   }
-  if (p === '/auth/register' && method === 'POST') return auth(body.fullName, body.email);
+  if (p === '/auth/register' && method === 'POST') {
+    lastCodeSentAt = Date.now();
+    return auth(body.fullName, body.email, false);
+  }
+  // Demonstração: o código é sempre 123456 e o reenvio espera 60 s.
+  const cooldown = () => {
+    const wait = Math.ceil((lastCodeSentAt + 60_000 - Date.now()) / 1000);
+    if (wait > 0) {
+      return new Response(JSON.stringify({ message: 'Aguarde para pedir outro código.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(wait) },
+      });
+    }
+    lastCodeSentAt = Date.now();
+    return json(204);
+  };
+  if (p === '/auth/password/forgot' && method === 'POST') return cooldown();
+  if (p === '/auth/password/reset' && method === 'POST') {
+    if (body?.code !== DEMO_CODE) return json(400, { message: 'Código incorreto ou vencido.' });
+    return json(204);
+  }
   if (p === '/auth/refresh') return user ? auth(user.name, user.email) : json(401);
   if (!authed) return json(401, { message: 'Não autenticado' });
+  if (p === '/auth/email/resend' && method === 'POST') return cooldown();
+  if (p === '/auth/email/verify' && method === 'POST') {
+    if (body?.code !== DEMO_CODE) return json(400, { message: 'Código incorreto ou vencido.' });
+    if (user) user = { ...user, emailVerified: true };
+    return json(200, user);
+  }
   if (p === '/auth/logout') return json(200, {});
 
   if (p === '/onboarding/status') return json(200, { currentStep: user?.onboardingCompleted ? 5 : 0, totalSteps: 5, progressPercentage: 0, completed: !!user?.onboardingCompleted });

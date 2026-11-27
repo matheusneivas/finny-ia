@@ -6,9 +6,12 @@ import type { ApiErrorBody, AuthResponse } from './types';
 export class ApiError extends Error {
   readonly status: number;
   readonly fieldErrors?: Record<string, string>;
+  /** Segundos do Retry-After (429). */
+  readonly retryAfter?: number;
 
-  constructor(status: number, message: string, fieldErrors?: Record<string, string>) {
+  constructor(status: number, message: string, fieldErrors?: Record<string, string>, retryAfter?: number) {
     super(message);
+    this.retryAfter = retryAfter;
     this.name = 'ApiError';
     this.status = status;
     this.fieldErrors = fieldErrors;
@@ -83,11 +86,15 @@ async function toApiError(res: Response): Promise<ApiError> {
   // 503 tem mensagem própria (IA fora do ar); demais 5xx caem na genérica.
   let message =
     serverMessage || FRIENDLY_MESSAGES[res.status] || FRIENDLY_MESSAGES[res.status >= 500 ? 500 : 400];
+  let retryAfter: number | undefined;
   if (res.status === 429) {
     const retry = Number(res.headers.get('Retry-After'));
-    if (Number.isFinite(retry) && retry > 0) message = `Muitas tentativas. Tente de novo em ${Math.ceil(retry)}s.`;
+    if (Number.isFinite(retry) && retry > 0) {
+      retryAfter = Math.ceil(retry);
+      message = `Muitas tentativas. Tente de novo em ${retryAfter}s.`;
+    }
   }
-  return new ApiError(res.status, message, body?.errors);
+  return new ApiError(res.status, message, body?.errors, retryAfter);
 }
 
 /**

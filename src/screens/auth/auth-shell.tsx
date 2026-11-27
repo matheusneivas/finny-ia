@@ -7,7 +7,18 @@ import { IconButton } from '@/components/button';
 import { Text } from '@/components/text';
 import { maxContentWidth, spacing, useColors } from '@/theme';
 
-export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+export function AuthShell({
+  title,
+  subtitle,
+  children,
+  onBack,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+  /** Ação do botão voltar; por padrão volta uma tela. */
+  onBack?: () => void;
+}) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   return (
@@ -18,7 +29,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.xl }]}>
         <View style={styles.back}>
-          <IconButton icon="chevronLeft" label="Voltar" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+          <IconButton icon="chevronLeft" label="Voltar" onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')))} />
         </View>
         <View style={styles.header}>
           <FiniMark size={48} />

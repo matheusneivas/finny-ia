@@ -23,18 +23,20 @@ export function SignUp() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const emailRef = useRef<TextFieldHandle>(null);
   const passwordRef = useRef<TextFieldHandle>(null);
+  const confirmRef = useRef<TextFieldHandle>(null);
 
   const strength = passwordStrength(password);
   const strengthColor = [colors.danger, colors.danger, colors.warning, colors.primary][strength];
 
   async function submit() {
     setFormError(null);
-    const parsed = signUpSchema.safeParse({ fullName, email, password });
+    const parsed = signUpSchema.safeParse({ fullName, email, password, confirmPassword });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error));
       return;
@@ -115,8 +117,8 @@ export function SignUp() {
           hint="Mínimo de 8 caracteres, com maiúscula, minúscula e número."
           autoComplete="new-password"
           textContentType="newPassword"
-          returnKeyType="go"
-          onSubmitEditing={submit}
+          returnKeyType="next"
+          onSubmitEditing={() => confirmRef.current?.focus()}
         />
         {password ? (
           <View style={styles.strength}>
@@ -129,6 +131,19 @@ export function SignUp() {
           </View>
         ) : null}
       </View>
+      <TextField
+        ref={confirmRef}
+        label="Repita a senha"
+        icon="lock"
+        secret
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        error={errors.confirmPassword}
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="go"
+        onSubmitEditing={submit}
+      />
       {formError ? (
         <Text variant="label" color="danger" accessibilityLiveRegion="assertive">
           {formError}

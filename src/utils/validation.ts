@@ -6,17 +6,37 @@ export const signInSchema = z.object({
   password: z.string().min(1, 'Informe sua senha'),
 });
 
-export const signUpSchema = z.object({
-  fullName: z.string().trim().min(2, 'Informe seu nome').max(100, 'Nome muito longo'),
-  email: z.string().trim().min(1, 'Informe seu e-mail').email('E-mail inválido'),
-  password: z
-    .string()
-    .min(8, 'Mínimo de 8 caracteres')
-    .max(128, 'Senha muito longa')
-    .regex(/[a-z]/, 'Inclua uma letra minúscula')
-    .regex(/[A-Z]/, 'Inclua uma letra maiúscula')
-    .regex(/\d/, 'Inclua um número'),
-});
+const emailField = z.string().trim().min(1, 'Informe seu e-mail').email('E-mail inválido');
+
+/** Mesma regra de senha do cadastro e da troca de senha. */
+const passwordField = z
+  .string()
+  .min(8, 'Mínimo de 8 caracteres')
+  .max(128, 'Senha muito longa')
+  .regex(/[a-z]/, 'Inclua uma letra minúscula')
+  .regex(/[A-Z]/, 'Inclua uma letra maiúscula')
+  .regex(/\d/, 'Inclua um número');
+
+export const signUpSchema = z
+  .object({
+    fullName: z.string().trim().min(2, 'Informe seu nome').max(100, 'Nome muito longo'),
+    email: emailField,
+    password: passwordField,
+    confirmPassword: z.string().min(1, 'Repita a senha'),
+  })
+  .refine((d) => d.password === d.confirmPassword, { path: ['confirmPassword'], message: 'As senhas não são iguais' });
+
+export const forgotSchema = z.object({ email: emailField });
+
+export const codeSchema = z.string().regex(/^\d{6}$/, 'O código tem 6 números');
+
+export const resetSchema = z
+  .object({
+    code: codeSchema,
+    newPassword: passwordField,
+    confirmPassword: z.string().min(1, 'Repita a senha'),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, { path: ['confirmPassword'], message: 'As senhas não são iguais' });
 
 export function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
   let score = 0;

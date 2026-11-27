@@ -74,7 +74,9 @@ function RootNavigator() {
   if (status === 'loading') return null;
 
   const signedIn = status === 'signedIn';
-  const ready = signedIn && !!user?.onboardingCompleted;
+  // Contas antigas não têm o campo: só bloqueia quando a API diz false.
+  const verified = signedIn && user?.emailVerified !== false;
+  const ready = verified && !!user?.onboardingCompleted;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -82,7 +84,11 @@ function RootNavigator() {
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
 
-      <Stack.Protected guard={signedIn && !ready}>
+      <Stack.Protected guard={signedIn && !verified}>
+        <Stack.Screen name="verificar-email" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={verified && !ready}>
         <Stack.Screen name="onboarding" />
       </Stack.Protected>
 

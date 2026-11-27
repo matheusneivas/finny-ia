@@ -78,6 +78,12 @@ export function SignIn() {
         </Text>
       ) : null}
       <Button title="Entrar" size="lg" fullWidth loading={loading} onPress={submit} />
+      <Button
+        title="Esqueci minha senha"
+        variant="ghost"
+        fullWidth
+        onPress={() => router.push({ pathname: '/esqueci-senha', params: email.trim() ? { email: email.trim() } : {} })}
+      />
       <Button title="Ainda não tenho conta" variant="ghost" fullWidth onPress={() => router.replace('/criar-conta')} />
     </AuthShell>
   );
