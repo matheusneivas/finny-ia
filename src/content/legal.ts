@@ -7,7 +7,7 @@ export const LEGAL_UPDATED_AT = '27 de novembro de 2026';
 
 /** Quem responde pelos dados (controlador) e canal do encarregado (DPO). */
 export const LEGAL_CONTACT = {
-  controller: 'Matheus, criador e responsável pelo Finny',
+  controller: 'Matheus Neiva Soares, criador e responsável pelo Finny',
   email: 'finnyia2025@gmail.com',
 };
 
@@ -102,7 +102,7 @@ export const termsOfUse: LegalSection[] = [
   {
     title: 'O que é o Finny',
     paragraphs: [
-      'O Finny ajuda você a organizar ganhos, gastos e metas, com um assistente de IA que explica e sugere. Ao criar uma conta, você concorda com estes Termos e com a Política de Privacidade.',
+      'O Finny é oferecido por Matheus Neiva Soares e ajuda você a organizar ganhos, gastos e metas, com um assistente de IA que explica e sugere. Ao criar uma conta, você concorda com estes Termos e com a Política de Privacidade.',
     ],
   },
   {
