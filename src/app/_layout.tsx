@@ -7,6 +7,7 @@ import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppLock } from '@/components/app-lock';
+import { ServerWakingBanner } from '@/components/server-waking-banner';
 import { ApiError } from '@/lib/api/client';
 import { setupApi } from '@/lib/api/setup';
 import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
@@ -47,6 +48,7 @@ export default function RootLayout() {
               <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
               <AppLock>
                 <RootNavigator />
+                <ServerWakingBanner />
               </AppLock>
             </ThemeProvider>
           </AuthProvider>

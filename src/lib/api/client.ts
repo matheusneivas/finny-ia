@@ -57,7 +57,7 @@ function buildPath(path: string, query?: RequestOptions['query']) {
 }
 
 const FRIENDLY_MESSAGES: Record<number, string> = {
-  0: 'Sem conexão com o servidor. Verifique sua internet.',
+  0: 'Não consegui falar com o servidor. Verifique sua internet e tente de novo em instantes.',
   400: 'Confira os dados e tente de novo.',
   401: 'Sua sessão expirou. Entre novamente.',
   403: 'Você não tem permissão para isso.',
@@ -88,7 +88,45 @@ async function toApiError(res: Response): Promise<ApiError> {
   return new ApiError(res.status, message, body?.errors);
 }
 
+/**
+ * Requisições lentas (servidor dormindo no Render). A UI assina para mostrar
+ * o aviso "acordando o servidor" enquanto houver alguma pendente há mais de 4s.
+ */
+let slowCount = 0;
+const slowListeners = new Set<(slow: boolean) => void>();
+function setSlow(delta: 1 | -1) {
+  const before = slowCount > 0;
+  slowCount = Math.max(0, slowCount + delta);
+  const after = slowCount > 0;
+  if (before !== after) slowListeners.forEach((l) => l(after));
+}
+export function subscribeSlowRequests(listener: (slow: boolean) => void) {
+  slowListeners.add(listener);
+  return () => {
+    slowListeners.delete(listener);
+  };
+}
+
+/** Acorda o servidor em segundo plano assim que o app abre. */
+export function warmUpServer() {
+  void transport('/actuator/health', { method: 'GET' }).catch(() => undefined);
+}
+
 async function rawRequest(path: string, opts: RequestOptions, accessToken: string | null): Promise<Response> {
+  let markedSlow = false;
+  const slowTimer = setTimeout(() => {
+    markedSlow = true;
+    setSlow(1);
+  }, env.slowRequestMs);
+  try {
+    return await rawRequestInner(path, opts, accessToken);
+  } finally {
+    clearTimeout(slowTimer);
+    if (markedSlow) setSlow(-1);
+  }
+}
+
+async function rawRequestInner(path: string, opts: RequestOptions, accessToken: string | null): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? env.requestTimeoutMs);
   opts.signal?.addEventListener('abort', () => controller.abort());

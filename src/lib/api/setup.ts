@@ -1,6 +1,6 @@
 import { env } from '@/config/env';
 
-import { setTransport } from './client';
+import { setTransport, warmUpServer } from './client';
 
 /** Liga o modo demonstração. `require` dentro do if: em produção o mock some do bundle. */
 export function setupApi() {
@@ -8,5 +8,7 @@ export function setupApi() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { mockTransport } = require('./mock') as typeof import('./mock');
     setTransport(mockTransport);
+    return;
   }
+  warmUpServer();
 }

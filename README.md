@@ -12,7 +12,7 @@ npx expo start                # abra no Expo Go (QR code) ou aperte w para a web
 
 Sem backend? Use `EXPO_PUBLIC_API_MOCK=true` no `.env`: o app sobe com uma API de demonstração em memória (só em desenvolvimento; não entra no build de produção). Escreva “gastei 45 no almoço” ou “quero juntar 5000 para uma viagem” no chat para ver o cartão de confirmação.
 
-Com a API de verdade (repo `Finny---API`): `SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` e aponte `EXPO_PUBLIC_API_URL` para o IP do computador na rede (ex.: `http://192.168.0.10:8080`) quando testar no celular.
+Por padrão o app usa a API no ar em `https://fini-api-rosi.onrender.com` (plano grátis do Render: dorme sem uso e leva cerca de 1 minuto para acordar; o app mostra “Acordando o servidor…”). Para usar uma API local: `SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun` e aponte `EXPO_PUBLIC_API_URL` para o IP do computador na rede (ex.: `http://192.168.0.10:8080`).
 
 Antes de subir código: `npx tsc --noEmit && npx expo lint`.
 
