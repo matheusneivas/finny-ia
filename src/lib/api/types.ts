@@ -209,5 +209,7 @@ export interface ApiErrorBody {
   status?: number;
   error?: string;
   message?: string;
+  /** Ex.: EMAIL_NOT_VERIFIED (403). */
+  code?: string;
   errors?: Record<string, string>;
 }

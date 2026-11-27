@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
-import { setSessionExpiredHandler } from '@/lib/api/client';
+import { setEmailNotVerifiedHandler, setSessionExpiredHandler } from '@/lib/api/client';
 import { authApi, onboardingApi, profileApi } from '@/lib/api/endpoints';
 import type { AuthResponse, User } from '@/lib/api/types';
 
@@ -72,6 +72,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => setSessionExpiredHandler(null);
   }, [clearSession]);
+
+  // A API manda confirmar o e-mail: leva para a tela do código.
+  useEffect(() => {
+    setEmailNotVerifiedHandler(() => {
+      setUser((u) => {
+        if (!u || u.emailVerified === false) return u;
+        const next = { ...u, emailVerified: false };
+        void saveUser(next);
+        return next;
+      });
+    });
+    return () => setEmailNotVerifiedHandler(null);
+  }, []);
 
   // Restaura a sessão ao abrir o app.
   useEffect(() => {

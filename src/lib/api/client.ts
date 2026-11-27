@@ -45,6 +45,12 @@ export function setSessionExpiredHandler(handler: (() => void) | null) {
   onSessionExpired = handler;
 }
 
+/** Chamado quando a API diz que o e-mail ainda não foi confirmado (403 EMAIL_NOT_VERIFIED). */
+let onEmailNotVerified: (() => void) | null = null;
+export function setEmailNotVerifiedHandler(handler: (() => void) | null) {
+  onEmailNotVerified = handler;
+}
+
 /** Transporte trocável: o modo demonstração injeta uma API falsa aqui. */
 export type Transport = (path: string, init: RequestInit) => Promise<Response>;
 let transport: Transport = (path, init) => fetch(`${env.apiUrl}${path}`, init);
@@ -86,6 +92,7 @@ async function toApiError(res: Response): Promise<ApiError> {
   // 503 tem mensagem própria (IA fora do ar); demais 5xx caem na genérica.
   let message =
     serverMessage || FRIENDLY_MESSAGES[res.status] || FRIENDLY_MESSAGES[res.status >= 500 ? 500 : 400];
+  if (res.status === 403 && body?.code === 'EMAIL_NOT_VERIFIED') onEmailNotVerified?.();
   let retryAfter: number | undefined;
   if (res.status === 429) {
     const retry = Number(res.headers.get('Retry-After'));
