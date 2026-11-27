@@ -61,6 +61,32 @@
           "cameraPermission": "O Fini usa a câmera para você tirar sua foto de perfil.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-widgets",
+        {
+          "enableAndroid": true,
+          "widgets": [
+            {
+              "name": "FiniWidget",
+              "displayName": "Fini",
+              "description": "Saldo do mês, sua meta e atalhos para anotar gastos e entradas.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryCircular"
+                ],
+                "initialLayout": "./src/widgets/fini-widget.ios.tsx"
+              },
+              "android": {
+                "targetCellWidth": 3,
+                "targetCellHeight": 2,
+                "initialLayout": "./src/widgets/fini-widget.android.tsx"
+              }
+            }
+          ]
+        }
       ]
     ],
     "experiments": {

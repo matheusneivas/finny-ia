@@ -7,6 +7,12 @@ import { maxContentWidth, spacing, useColors } from '@/theme';
 import { IconButton } from './button';
 import { Text } from './text';
 
+/** Fecha o formulário; se ele foi aberto direto por um atalho, volta para o início. */
+export function closeSheet() {
+  if (router.canGoBack()) router.back();
+  else router.replace('/');
+}
+
 /** Moldura dos formulários apresentados como folha (formSheet). */
 export function SheetFrame({ title, children, footer }: { title: string; children: React.ReactNode; footer?: React.ReactNode }) {
   const colors = useColors();
@@ -17,7 +23,7 @@ export function SheetFrame({ title, children, footer }: { title: string; childre
         <Text variant="heading" accessibilityRole="header" style={styles.flex}>
           {title}
         </Text>
-        <IconButton icon="close" label="Fechar" variant="muted" size={36} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+        <IconButton icon="close" label="Fechar" variant="muted" size={36} onPress={closeSheet} />
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         {children}

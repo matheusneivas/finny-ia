@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -7,7 +6,7 @@ import { Card } from '@/components/card';
 import type { IconName } from '@/components/icon';
 import { Chip } from '@/components/misc';
 import { MoneyField } from '@/components/money-field';
-import { SheetFrame } from '@/components/sheet-frame';
+import { closeSheet, SheetFrame } from '@/components/sheet-frame';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { useCreateGoal } from '@/hooks/queries';
@@ -47,7 +46,7 @@ export function GoalForm() {
     if (Object.keys(next).length) return;
     try {
       await create.mutateAsync({ name: name.trim(), targetAmount: centsToAmount(cents), deadline: iso!, icon });
-      router.back();
+      closeSheet();
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : 'Não foi possível criar a meta.');
     }

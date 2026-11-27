@@ -100,7 +100,12 @@ function RootNavigator() {
           name="aporte"
           options={sheetOptions}
         />
+        <Stack.Screen
+          name="atalhos"
+          options={sheetOptions}
+        />
       </Stack.Protected>
+
     </Stack>
   );
 }

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
@@ -8,7 +8,7 @@ import { Button } from '@/components/button';
 import { resolveIcon } from '@/components/icon';
 import { Chip, ErrorState, LoadingState, SegmentedControl } from '@/components/misc';
 import { MoneyField } from '@/components/money-field';
-import { SheetFrame } from '@/components/sheet-frame';
+import { closeSheet, SheetFrame } from '@/components/sheet-frame';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { useCategories, useCreateTransaction, useDeleteTransaction, useUpdateTransaction } from '@/hooks/queries';
@@ -38,9 +38,18 @@ function parseDraft(raw?: string): Partial<TransactionInput> | null {
   }
 }
 
-export function TransactionForm({ id, initialType }: { id?: string; initialType: TransactionType }) {
+export function TransactionForm({
+  id,
+  initialType,
+  prefill,
+}: {
+  id?: string;
+  initialType: TransactionType;
+  /** Valor/descrição vindos de um atalho, já validados. */
+  prefill?: Partial<TransactionInput> | null;
+}) {
   const { rascunho } = useLocalSearchParams<{ rascunho?: string }>();
-  const draft = useMemo(() => parseDraft(rascunho), [rascunho]);
+  const draft = useMemo(() => parseDraft(rascunho) ?? prefill ?? null, [rascunho, prefill]);
   const existing = useQuery({ queryKey: ['transaction', id], queryFn: () => transactionsApi.get(id!), enabled: !!id });
 
   if (id && existing.isLoading) {
@@ -115,7 +124,7 @@ function Form({
     try {
       if (editing) await update.mutateAsync({ id: id!, input });
       else await create.mutateAsync(input);
-      router.back();
+      closeSheet();
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : 'Não foi possível salvar.');
     }
@@ -125,7 +134,7 @@ function Form({
     const run = async () => {
       try {
         await remove.mutateAsync(id!);
-        router.back();
+        closeSheet();
       } catch (e) {
         setFormError(e instanceof ApiError ? e.message : 'Não foi possível excluir.');
       }

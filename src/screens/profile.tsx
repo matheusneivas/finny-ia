@@ -1,4 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
@@ -169,6 +170,18 @@ export function ProfileScreen() {
         <SettingRow icon="school" title="Nível em finanças" subtitle={profile.data?.knowledgeLevel ? knowledgeLabel[profile.data.knowledgeLevel] : '—'} />
         <SettingRow icon="chat" title="Jeito de conversar" subtitle={profile.data?.communicationStyle ? toneLabel[profile.data.communicationStyle] : '—'} />
         <SettingRow icon="goals" title="Objetivo principal" subtitle={profile.data?.primaryGoal || '—'} />
+      </Card>
+
+      <Text variant="overline" color="textSecondary">
+        Atalhos
+      </Text>
+      <Card onPress={() => router.push('/atalhos')} accessibilityLabel="Atalhos, Siri e widget">
+        <SettingRow
+          icon="bolt"
+          title="Atalhos, Siri e widget"
+          subtitle="Anote um gasto sem abrir o app"
+          right={<Icon name="chevronRight" size={16} color={colors.textMuted} />}
+        />
       </Card>
 
       <Text variant="overline" color="textSecondary">
